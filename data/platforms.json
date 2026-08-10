@@ -1,0 +1,60 @@
+{
+  "platforms": [
+    {
+      "name": "إيجار",
+      "name_en": "Ejar",
+      "url": "https://www.ejar.sa",
+      "category": "official",
+      "description": "المنصة الحكومية الرسمية لتوثيق عقود الإيجار، تابعة للهيئة العامة للعقار. توثيق العقد عبرها مطلوب نظامًا."
+    },
+    {
+      "name": "عقار",
+      "name_en": "Aqar",
+      "url": "https://sa.aqar.fm",
+      "category": "long_term",
+      "description": "أكبر سوق عقاري في السعودية لعرض الشقق والفلل للإيجار والبيع."
+    },
+    {
+      "name": "بيوت السعودية",
+      "name_en": "Bayut",
+      "url": "https://www.bayut.sa",
+      "category": "long_term",
+      "description": "منصة إعلانات عقارية بواجهة حديثة وبحث متقدم حسب الحي والسعر."
+    },
+    {
+      "name": "وصلت",
+      "name_en": "Wasalt",
+      "url": "https://wasalt.com",
+      "category": "long_term",
+      "description": "منصة عقارية سعودية للإيجار والبيع مع خدمات وساطة."
+    },
+    {
+      "name": "حراج",
+      "name_en": "Haraj",
+      "url": "https://haraj.com.sa",
+      "category": "long_term",
+      "description": "أشهر موقع إعلانات مبوبة في السعودية، وفيه قسم عقاري نشط."
+    },
+    {
+      "name": "جاذرن",
+      "name_en": "Gathern",
+      "url": "https://gathern.co",
+      "category": "short_term",
+      "description": "منصة سعودية لحجز الشقق والشاليهات والاستراحات بالليلة."
+    },
+    {
+      "name": "Airbnb",
+      "name_en": "Airbnb",
+      "url": "https://www.airbnb.com",
+      "category": "short_term",
+      "description": "منصة عالمية للتأجير قصير المدى، مناسبة للزوار والسياح."
+    },
+    {
+      "name": "Booking.com",
+      "name_en": "Booking.com",
+      "url": "https://www.booking.com",
+      "category": "short_term",
+      "description": "منصة حجوزات عالمية تقبل إدراج الشقق المفروشة."
+    }
+  ]
+}

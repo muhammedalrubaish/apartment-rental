@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>تأجير الشقق</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -14,9 +15,29 @@
     <p class="subtitle">تصفح الشقق المتاحة واختر ما يناسبك</p>
   </header>
 
-  <main id="apartments" class="apartments-grid">
-    <p class="loading">جارِ التحميل...</p>
+  <main>
+    <section class="section">
+      <h2 class="section-title">الشقق المتاحة</h2>
+      <div id="apartments" class="apartments-grid">
+        <p class="loading">جارِ التحميل...</p>
+      </div>
+    </section>
+
+    <section class="section platforms-section">
+      <h2 class="section-title">منصات التأجير في السعودية</h2>
+      <p class="section-note">
+        منصات معروفة يمكن إدراج الشقة فيها أو البحث عبرها.
+        توثيق عقد الإيجار عبر <strong>إيجار</strong> مطلوب نظامًا في السعودية.
+      </p>
+      <div id="platforms" class="platforms-grid">
+        <p class="loading">جارِ التحميل...</p>
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <p>مشروع تأجير الشقق</p>
+  </footer>
 
   <script src="assets/js/app.js"></script>
 </body>
