@@ -1,0 +1,39 @@
+{
+  "apartments": [
+    {
+      "id": "A2",
+      "name": "شقة A2",
+      "type": "غرفة نوم وصالة",
+      "rooms": {
+        "bedrooms": 1,
+        "living_room": true,
+        "kitchen": true,
+        "bathroom": true
+      },
+      "floor": "الطابق الأرضي",
+      "location": {
+        "city": "الرياض",
+        "district": "حي السليمانية",
+        "nearby": ["المترو", "المستشفيات"]
+      },
+      "pricing": {
+        "currency": "SAR",
+        "min_price": 294,
+        "max_price": 400
+      },
+      "lease_duration_months": 11,
+      "check_in_time": "15:00",
+      "check_out_time": "00:00",
+      "amenities": {
+        "internet": true,
+        "smart_lock": {
+          "type": "بصمة",
+          "platform": "Tuya"
+        },
+        "washing_machine": true,
+        "free_parking": true,
+        "tv": true
+      }
+    }
+  ]
+}
