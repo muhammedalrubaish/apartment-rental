@@ -812,3 +812,42 @@ body {
 @media (max-width: 768px) {
     .sticky-widget { position: static; }
 }
+
+/* إصلاح التمدد الأفقي على الجوال:
+   عناصر الـ grid لا تنزل تحت عرض محتواها الأدنى (min-content) افتراضياً،
+   والجدول بعرض أدنى 520px كان يوسّع الصفحة كاملة ويزيح المحتوى لليمين. */
+.content-grid > *,
+.input-grid > * {
+    min-width: 0;
+}
+
+.table-wrap {
+    max-width: 100%;
+}
+
+/* الفوتر يمتد بعرض الشاشة كاملاً */
+.site-footer {
+    width: 100%;
+}
+
+@media (max-width: 480px) {
+    .main-container {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .data-table {
+        min-width: 460px;
+        font-size: 12px;
+    }
+
+    .data-table thead th,
+    .data-table td {
+        padding: 9px 8px;
+    }
+
+    /* بطاقات الملخص عمودين مرتبين */
+    .quick-specs {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
