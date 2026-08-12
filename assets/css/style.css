@@ -586,3 +586,229 @@ body {
 .floating-wa:hover {
     transform: scale(1.1);
 }
+
+/* ============================================
+   صفحة تحصيل الدين (collection.html)
+   ============================================ */
+
+.lock-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(140deg, #0f172a, #1e293b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 10000;
+}
+
+.lock-box {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 36px 30px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+.lock-icon { font-size: 46px; margin-bottom: 10px; }
+
+.lock-box h1 {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.lock-box p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.lock-box .form-control { text-align: center; letter-spacing: 2px; }
+
+.lock-error {
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #dc2626;
+    min-height: 18px;
+}
+
+.lock-back {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.lock-back:hover { color: var(--primary); }
+
+.btn-primary-full {
+    width: 100%;
+    margin-top: 12px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary-full:hover { filter: brightness(1.08); }
+
+.btn-ghost {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+/* شريط التقدم */
+.progress-wrap { margin: 18px 0 4px; }
+
+.progress-track {
+    height: 14px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-emerald), #34d399);
+    transition: width 0.4s ease;
+}
+
+.progress-label {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* شبكة المدخلات */
+.input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.payment-form { align-items: end; }
+
+.form-group-btn { display: flex; align-items: flex-end; }
+.form-group-btn .btn-primary-full { margin-top: 0; }
+
+/* الجداول */
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 520px;
+}
+
+.data-table thead th {
+    background: var(--bg-soft);
+    padding: 12px 10px;
+    text-align: right;
+    font-weight: 800;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 11px 10px;
+    border-top: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.data-table .num-cell { font-weight: 700; white-space: nowrap; }
+.data-table .strong { color: var(--primary); }
+
+.data-table .total-row td {
+    background: var(--bg-soft);
+    font-weight: 900;
+}
+
+.empty-row {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 20px !important;
+}
+
+.btn-del {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-del:hover { background: #fee2e2; }
+
+.note-line {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.9;
+    background: var(--bg-soft);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.widget-subtitle {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 12px;
+}
+
+.fee-model {
+    margin-top: 14px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.9;
+    color: #0369a1;
+}
+
+.fee-model b { display: block; margin-bottom: 4px; font-weight: 900; }
+
+.sticky-widget { position: sticky; top: 90px; }
+
+@media (max-width: 768px) {
+    .sticky-widget { position: static; }
+}

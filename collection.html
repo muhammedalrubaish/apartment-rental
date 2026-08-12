@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>حاسبة تحصيل الدين | شقة السليمانية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+    <!-- Password Gate -->
+    <div id="lock-screen" class="lock-screen">
+        <div class="lock-box">
+            <div class="lock-icon">🔐</div>
+            <h1>حاسبة تحصيل الدين</h1>
+            <p>هذه الصفحة خاصة بالمالك فقط. أدخل كلمة السر للاطلاع على تفاصيل التحصيل.</p>
+            <form id="lock-form" autocomplete="off">
+                <input type="password" id="lock-input" class="form-control" placeholder="كلمة السر" autocomplete="current-password">
+                <button type="submit" class="btn-primary-full">دخول</button>
+            </form>
+            <div id="lock-error" class="lock-error"></div>
+            <a href="index.html" class="lock-back">← العودة لصفحة الشقة</a>
+        </div>
+    </div>
+
+    <!-- Protected Content -->
+    <div id="debt-app" hidden>
+
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="index.html" class="brand-logo">
+                    🏢 شقة الفخامة الذكية
+                    <span class="brand-badge">لوحة خاصة</span>
+                </a>
+                <div class="nav-actions">
+                    <button type="button" id="btn-lock" class="btn-ghost">🔒 قفل الصفحة</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-container">
+
+            <header class="hero-header">
+                <span style="color: var(--primary); font-size: 13px; font-weight: 800;">💰 لوحة خاصة • غير مدرجة في محركات البحث</span>
+                <h1 style="font-size: 26px; font-weight: 900; margin-top: 4px; color: var(--text-main);">
+                    حاسبة تحصيل الدين والمصاريف التشغيلية
+                </h1>
+                <p class="description-text" style="margin-top: 10px;">
+                    الوالدة تطلب <b>قيمة الإيجار فقط</b> الذي دفعته نيابةً عني — بدون أي أرباح أو تصفية حسابات.
+                    المصاريف التشغيلية وحساب الأرباح مذكورة هنا للمتابعة الشخصية فقط ولا تدخل في الدين.
+                </p>
+            </header>
+
+            <!-- Top KPI Summary -->
+            <div class="quick-specs" id="kpi-strip">
+                <div class="spec-box">
+                    <div class="icon">📄</div>
+                    <div class="label">قيمة العقد (سنة)</div>
+                    <div class="val" id="kpi-contract">—</div>
+                </div>
+                <div class="spec-box">
+                    <div class="icon">🧾</div>
+                    <div class="label">الدين الأصلي للوالدة</div>
+                    <div class="val" id="kpi-debt">—</div>
+                </div>
+                <div class="spec-box">
+                    <div class="icon">✅</div>
+                    <div class="label">المسدَّد حتى الآن</div>
+                    <div class="val" id="kpi-paid">—</div>
+                </div>
+                <div class="spec-box">
+                    <div class="icon">⏳</div>
+                    <div class="label">المتبقي</div>
+                    <div class="val" id="kpi-remaining">—</div>
+                </div>
+                <div class="spec-box">
+                    <div class="icon">🌙</div>
+                    <div class="label">ليالٍ لسداد المتبقي</div>
+                    <div class="val" id="kpi-nights">—</div>
+                </div>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-track"><div class="progress-fill" id="debt-progress"></div></div>
+                <div class="progress-label" id="debt-progress-label">—</div>
+            </div>
+
+            <div class="content-grid">
+                <div>
+
+                    <!-- Debt basis -->
+                    <div class="card-section">
+                        <h3 class="card-title">🧮 أساس الدين (الإيجار فقط)</h3>
+                        <div class="input-grid">
+                            <div class="form-group">
+                                <label>قيمة العقد لمدة سنة (ريال)</label>
+                                <input type="number" id="in-contract" class="form-control" value="37000" min="0" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>المبلغ الذي دفعته الوالدة (أول 6 أشهر)</label>
+                                <input type="number" id="in-paid-by-mom" class="form-control" value="18500" min="0" step="any">
+                            </div>
+                        </div>
+                        <div class="calc-summary">
+                            <div class="calc-row"><span>الإيجار الشهري (العقد ÷ 12):</span><span id="out-monthly-rent">—</span></div>
+                            <div class="calc-row"><span>نصف السنة حسب العقد (6 أشهر):</span><span id="out-half-contract">—</span></div>
+                            <div class="calc-row"><span>الفرق بين ما دفعته الوالدة ونصف العقد:</span><span id="out-diff">—</span></div>
+                            <div class="calc-row total"><span>إجمالي الدين للوالدة:</span><span id="out-debt-total">—</span></div>
+                        </div>
+                        <p class="note-line">
+                            💡 الدين = ما دفعته الوالدة فعلياً عن الإيجار. لا تُضاف مصاريف تشغيلية ولا تُخصم أرباح.
+                        </p>
+                    </div>
+
+                    <!-- Payments log -->
+                    <div class="card-section">
+                        <h3 class="card-title">💵 سجل الدفعات للوالدة</h3>
+                        <form id="payment-form" class="input-grid payment-form">
+                            <div class="form-group">
+                                <label>التاريخ</label>
+                                <input type="date" id="pay-date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>المبلغ (ريال)</label>
+                                <input type="number" id="pay-amount" class="form-control" min="0" step="any" placeholder="مثال: 2000" required>
+                            </div>
+                            <div class="form-group">
+                                <label>ملاحظة (اختياري)</label>
+                                <input type="text" id="pay-note" class="form-control" placeholder="تحويل بنكي / نقداً">
+                            </div>
+                            <div class="form-group form-group-btn">
+                                <button type="submit" class="btn-primary-full">➕ إضافة دفعة</button>
+                            </div>
+                        </form>
+
+                        <div class="table-wrap">
+                            <table class="data-table" id="payments-table">
+                                <thead>
+                                    <tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th><th>المتبقي بعدها</th><th></th></tr>
+                                </thead>
+                                <tbody id="payments-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="note-line">💾 الدفعات محفوظة محلياً في هذا المتصفح فقط (localStorage).</p>
+                    </div>
+
+                    <!-- Operating expenses -->
+                    <div class="card-section">
+                        <h3 class="card-title">🧹 المصاريف التشغيلية (للمتابعة فقط)</h3>
+                        <div class="input-grid">
+                            <div class="form-group">
+                                <label>النظافة — أول شهرين (شهرياً)</label>
+                                <input type="number" id="in-clean-first" class="form-control" value="450" min="0" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>النظافة — بقية الأشهر (شهرياً)</label>
+                                <input type="number" id="in-clean-rest" class="form-control" value="500" min="0" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>الكهرباء (متوسط شهري)</label>
+                                <input type="number" id="in-power" class="form-control" value="130" min="0" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>الإنترنت (حصتي شهرياً — مقسوم مع شخص)</label>
+                                <input type="number" id="in-internet" class="form-control" value="70" min="0" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>عدد الأشهر المحسوبة</label>
+                                <input type="number" id="in-months" class="form-control" value="12" min="1" max="24" step="1">
+                            </div>
+                        </div>
+                        <div class="calc-summary">
+                            <div class="calc-row"><span>إجمالي النظافة:</span><span id="out-clean-total">—</span></div>
+                            <div class="calc-row"><span>إجمالي الكهرباء:</span><span id="out-power-total">—</span></div>
+                            <div class="calc-row"><span>إجمالي الإنترنت:</span><span id="out-internet-total">—</span></div>
+                            <div class="calc-row"><span>متوسط التشغيل الشهري:</span><span id="out-opex-monthly">—</span></div>
+                            <div class="calc-row total"><span>إجمالي المصاريف التشغيلية:</span><span id="out-opex-total">—</span></div>
+                        </div>
+                        <p class="note-line">
+                            📌 النظافة: أول شهرين بسعر مختلف عن بقية الأشهر. الإنترنت مقسوم مع شخص آخر (المبلغ أعلاه هو حصتي أنا).
+                        </p>
+                    </div>
+
+                    <!-- Monthly breakdown -->
+                    <div class="card-section">
+                        <h3 class="card-title">📅 الجدول الشهري التفصيلي</h3>
+                        <div class="table-wrap">
+                            <table class="data-table" id="months-table">
+                                <thead>
+                                    <tr><th>الشهر</th><th>الإيجار</th><th>نظافة</th><th>كهرباء</th><th>إنترنت</th><th>إجمالي التكلفة</th></tr>
+                                </thead>
+                                <tbody id="months-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right column -->
+                <div>
+                    <div class="booking-widget sticky-widget">
+                        <div class="price-header">
+                            <span class="price-val" id="side-remaining">—</span>
+                            <span class="price-unit">المتبقي للوالدة (ريال)</span>
+                        </div>
+
+                        <div class="calculator-form">
+                            <h4 class="widget-subtitle">🏨 صافي الليلة بعد عمولة المنصة</h4>
+
+                            <div class="form-group">
+                                <label>سعر الليلة المعلن (ريال)</label>
+                                <input type="number" id="in-night-price" class="form-control" value="294" min="0" step="any">
+                            </div>
+
+                            <div class="form-group">
+                                <label>عدد الليالي المحجوزة</label>
+                                <input type="number" id="in-nights" class="form-control" value="1" min="1" step="1">
+                            </div>
+
+                            <div class="calc-summary">
+                                <div class="calc-row"><span>عمولة المنصة لليلة:</span><span id="out-fee-night">—</span></div>
+                                <div class="calc-row"><span>صافي الليلة:</span><span id="out-net-night">—</span></div>
+                                <div class="calc-row"><span>إجمالي العمولة:</span><span id="out-fee-total">—</span></div>
+                                <div class="calc-row total"><span>صافي الدخل:</span><span id="out-net-total">—</span></div>
+                            </div>
+
+                            <div class="calc-summary" style="margin-top: 10px;">
+                                <div class="calc-row"><span>صافي بعد خصم التشغيل اليومي:</span><span id="out-net-after-opex">—</span></div>
+                                <div class="calc-row"><span>ليالٍ مطلوبة لسداد المتبقي:</span><span id="out-nights-needed">—</span></div>
+                                <div class="calc-row"><span>أشهر تقريبية بإشغال 60%:</span><span id="out-months-needed">—</span></div>
+                            </div>
+
+                            <div class="fee-model">
+                                <b>نموذج العمولة</b>
+                                <span>تقدير مبني على أمثلتك: 269 ← 33 ريال، 139 ← 24 ريال. المعادلة ≈ 14.4 + 6.9% من سعر الليلة، وبحد أقصى 50 ريال.</span>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 10px;">
+                                <label>الحد الأقصى للعمولة (ريال)</label>
+                                <input type="number" id="in-fee-cap" class="form-control" value="50" min="0" step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="site-footer">
+            <div class="footer-content">
+                <div class="footer-brand">لوحة تحصيل الدين</div>
+                <p>مالك العقار: محمد إبراهيم الربيش • صفحة خاصة محمية بكلمة سر</p>
+                <p style="margin-top: 15px; font-size: 11px; opacity: 0.7;">جميع الحقوق محفوظة © 2026</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="assets/js/debt.js"></script>
+</body>
+</html>
