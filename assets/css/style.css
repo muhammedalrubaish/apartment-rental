@@ -1,0 +1,588 @@
+/* ==========================================================================
+   RentApartment - Modern Luxury Style System
+   ========================================================================== */
+
+:root {
+    --primary: #0284c7;
+    --primary-dark: #0369a1;
+    --primary-light: #e0f2fe;
+    --accent-emerald: #10b981;
+    --accent-gold: #f59e0b;
+    --bg-dark: #0f172a;
+    --bg-card: #ffffff;
+    --bg-soft: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
+    --radius: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset & Fonts */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-soft);
+    color: var(--text-main);
+    direction: rtl;
+    text-align: right;
+    line-height: 1.7;
+    overflow-x: hidden;
+}
+
+/* Header & Navigation */
+.navbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-logo {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.brand-badge {
+    background: linear-gradient(135deg, #0284c7, #10b981);
+    color: #ffffff;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #ffffff;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+    transition: var(--transition);
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+}
+
+.btn-whatsapp {
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: #ffffff;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-whatsapp:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+}
+
+/* Layout Containers */
+.main-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 24px;
+}
+
+/* Hero Title Section */
+.hero-header {
+    background: #ffffff;
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary), var(--accent-emerald), var(--accent-gold));
+}
+
+.titles-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+    .titles-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+.title-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    transition: var(--transition);
+}
+
+.title-card.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.title-platform-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.title-card h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+/* Host Info Strip */
+.host-strip {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(2, 132, 199, 0.05);
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    border-right: 4px solid var(--primary);
+}
+
+.host-avatar {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--primary), var(--accent-emerald));
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.host-details h3 {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.host-details p {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Gallery Showcase */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 30px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    height: 420px;
+    box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+.gallery-item {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+.gallery-caption {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    background: linear-gradient(transparent, rgba(15, 23, 42, 0.85));
+    color: white;
+    padding: 20px 16px 12px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Content Grid: Main Info + Booking Card */
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+@media (max-width: 992px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Feature Quick Badges */
+.quick-specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.spec-box {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.spec-box .icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.spec-box .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.spec-box .val {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+/* Description Section */
+.card-section {
+    background: #ffffff;
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.description-text {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #334155;
+}
+
+/* Amenities Grid */
+.amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.amenity-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: var(--bg-soft);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.amenity-icon {
+    font-size: 26px;
+    background: #ffffff;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+}
+
+.amenity-info h4 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.amenity-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Booking Widget Card */
+.booking-widget {
+    background: #ffffff;
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 90px;
+}
+
+.price-header {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.price-val {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--primary-dark);
+}
+
+.price-unit {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.calculator-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.form-control {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-family: inherit;
+    font-size: 14px;
+    background: var(--bg-soft);
+    color: var(--text-main);
+    width: 100%;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #ffffff;
+}
+
+.calc-summary {
+    background: var(--primary-light);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 10px 0;
+}
+
+.calc-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 6px;
+}
+
+.calc-row.total {
+    font-size: 17px;
+    font-weight: 900;
+    border-top: 1px solid rgba(2, 132, 199, 0.2);
+    padding-top: 8px;
+    margin-top: 6px;
+}
+
+/* Platform Directory Section */
+.platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.platform-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: var(--transition);
+}
+
+.platform-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+}
+
+.platform-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.platform-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--bg-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.platform-info h4 {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.platform-info span {
+    font-size: 11px;
+    color: var(--accent-emerald);
+    font-weight: 700;
+}
+
+/* Footer */
+.site-footer {
+    background: var(--bg-dark);
+    color: #94a3b8;
+    padding: 40px 0 20px;
+    margin-top: 60px;
+    text-align: center;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.footer-brand {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+/* Floating WhatsApp Button */
+.floating-wa {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4);
+    z-index: 9999;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.floating-wa:hover {
+    transform: scale(1.1);
+}
