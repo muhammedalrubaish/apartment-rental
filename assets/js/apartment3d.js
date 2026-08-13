@@ -45,7 +45,7 @@ const MAT = {
     dark: mat(0x2b3440, { roughness: 0.4 }),
     steel: mat(0xc0c8d0, { roughness: 0.25, metalness: 0.7 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x9ecbe8, transparent: true, opacity: 0.32, roughness: 0.1 }),
-    green: mat(0x3f7d4f),
+    screenOff: mat(0x0d1117, { roughness: 0.25, metalness: 0.3 }),
     gold: mat(0xd4a437, { roughness: 0.3, metalness: 0.6 }),
     slab: mat(0xb9c2cc),
     rug: mat(0x8fa5b8),
@@ -95,38 +95,38 @@ const FURNITURE = {
     },
 
     living(R) {
-        // التلفزيون على الجدار الشمالي، والكنب على الجدار الغربي المجاور له (يسار الشاشة)
+        // الكنب على الجدار الجانبي (شرقي افتراضاً) والتلفزيون على الجدار الشمالي
+        const east = (R.sofaSide || 'east') === 'east';
+        const wallX = east ? R.x0 + R.w - 0.16 : R.x0 + 0.16;   // الجدار الملاصق للكنب
+        const inward = east ? -1 : 1;                            // اتجاه داخل الغرفة
+        const sofaX = wallX + inward * 0.46;
         const sofaLen = Math.min(2.4, R.d * 0.78);
         const sofaZ = R.z0 + R.d / 2 + 0.15;
-        const sofaX = R.x0 + 0.62;
-        const tvX = R.mx + 0.35;
+        const tvX = R.mx + inward * 0.35;
+
+        // شاشة التلفزيون — قابلة للتشغيل بالضغط
+        const screen = box(1.25, 0.72, 0.05, MAT.screenOff.clone(), tvX, 0.88, R.z0 + 0.22);
+        screen.userData.interactive = 'tv';
+        screen.userData.tvAnchor = [tvX, 0.88, R.z0 + 0.5];
 
         return [
-            // الكنب ملاصق للجدار الغربي، ممتد بمحور العمق
-            box(0.25, 0.62, sofaLen, MAT.fabric, R.x0 + 0.16, 0.55, sofaZ),          // الظهر
-            box(0.92, 0.42, sofaLen, MAT.fabric, sofaX, 0.26, sofaZ),                 // المقعد
-            box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ - sofaLen / 2),        // مسند جانبي
-            box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ + sofaLen / 2),        // مسند جانبي
+            box(0.25, 0.62, sofaLen, MAT.fabric, wallX, 0.55, sofaZ),                       // ظهر الكنب
+            box(0.92, 0.42, sofaLen, MAT.fabric, sofaX, 0.26, sofaZ),                        // المقعد
+            box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ - sofaLen / 2),
+            box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ + sofaLen / 2),
             box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ - sofaLen * 0.26),
             box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ + sofaLen * 0.26),
 
-            // طاولة القهوة أمام الكنب
-            box(0.62, 0.1, 1.05, MAT.wood, sofaX + 0.95, 0.42, sofaZ),
-            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 0.72, 0.2, sofaZ - 0.4),
-            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 1.18, 0.2, sofaZ - 0.4),
-            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 0.72, 0.2, sofaZ + 0.4),
-            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 1.18, 0.2, sofaZ + 0.4),
+            box(0.62, 0.1, 1.05, MAT.wood, sofaX + inward * 0.95, 0.42, sofaZ),               // طاولة القهوة
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 0.72, 0.2, sofaZ - 0.4),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 1.18, 0.2, sofaZ - 0.4),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 0.72, 0.2, sofaZ + 0.4),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 1.18, 0.2, sofaZ + 0.4),
 
-            // سجادة
-            box(R.w * 0.62, 0.02, R.d * 0.6, MAT.rug, R.mx, 0.05, sofaZ),
+            box(R.w * 0.62, 0.02, R.d * 0.6, MAT.rug, R.mx, 0.05, sofaZ),                     // سجادة
 
-            // طاولة التلفزيون والشاشة على الجدار الشمالي
-            box(1.35, 0.42, 0.34, MAT.wood, tvX, 0.24, R.z0 + 0.3),
-            box(1.25, 0.72, 0.05, MAT.dark, tvX, 0.88, R.z0 + 0.22),
-
-            // نبتة زينة في الركن
-            box(0.11, 0.42, 0.11, MAT.green, R.x0 + R.w - 0.42, 0.26, R.z0 + R.d - 0.45),
-            box(0.44, 0.48, 0.44, MAT.green, R.x0 + R.w - 0.42, 0.72, R.z0 + R.d - 0.45),
+            box(1.35, 0.42, 0.34, MAT.wood, tvX, 0.24, R.z0 + 0.3),                           // طاولة التلفزيون
+            screen,
         ];
     },
 
@@ -175,9 +175,7 @@ const FURNITURE = {
     hall(R) {
         return [
             box(Math.min(0.9, R.w * 0.25), 0.4, 0.35, MAT.woodLight, R.x0 + 0.8, 0.22, R.z0 + R.d - 0.3),
-            box(0.5, 0.02, 0.8, mat(0x7f8c99), R.mx, 0.05, R.z0 + R.d - 0.5),
-            box(0.12, 0.45, 0.12, MAT.green, R.x0 + 0.35, 0.28, R.z0 + 0.35),
-            box(0.42, 0.5, 0.42, MAT.green, R.x0 + 0.35, 0.75, R.z0 + 0.35),
+            box(0.5, 0.02, 0.8, MAT.rug, R.mx, 0.05, R.z0 + R.d - 0.5),
         ];
     },
 };
@@ -300,22 +298,33 @@ function buildApartment(scene, plan) {
         });
     });
 
-    /* الأبواب داخل الفتحات — ارتفاع الباب يتبع الجدار الذي يقع فيه */
+    /* الأبواب داخل الفتحات — كل باب مجموعة تدور حول مفصلها عند الضغط */
+    const doors = [];
     openings.filter((o) => o.kind === 'door').forEach((o) => {
         const len = Math.abs(o.to - o.from);
-        const mid = (o.from + o.to) / 2;
         const outer = o.axis === 'x'
             ? (Math.abs(o.at) < EPS || Math.abs(o.at - D) < EPS)
             : (Math.abs(o.at) < EPS || Math.abs(o.at - W) < EPS);
         const front = o.axis === 'x' && Math.abs(o.at - D) < EPS;
         const dh = (front ? frontH : (outer ? wallH : innerH)) * 0.94;
+
+        const pivot = new THREE.Group();
+        pivot.userData.interactive = 'door';
+        pivot.userData.open = false;
+        pivot.userData.swing = o.swing === 'ccw' ? 1 : -1;
+
         if (o.axis === 'x') {
-            scene.add(box(len * 0.96, dh, 0.06, MAT.wood, cx(mid), dh / 2, cz(o.at)));
-            scene.add(box(0.09, 0.15, 0.05, MAT.gold, cx(mid + len * 0.34), dh * 0.62, cz(o.at) - 0.06));
+            pivot.position.set(cx(Math.min(o.from, o.to)), 0, cz(o.at));
+            pivot.add(box(len * 0.97, dh, 0.06, MAT.wood, len / 2, dh / 2, 0));
+            pivot.add(box(0.08, 0.14, 0.05, MAT.gold, len * 0.86, dh * 0.55, -0.06));
         } else {
-            scene.add(box(0.06, dh, len * 0.96, MAT.wood, cx(o.at), dh / 2, cz(mid)));
-            scene.add(box(0.05, 0.15, 0.09, MAT.gold, cx(o.at) - 0.06, dh * 0.62, cz(mid + len * 0.34)));
+            pivot.position.set(cx(o.at), 0, cz(Math.min(o.from, o.to)));
+            pivot.add(box(0.06, dh, len * 0.97, MAT.wood, 0, dh / 2, len / 2));
+            pivot.add(box(0.05, 0.14, 0.08, MAT.gold, -0.06, dh * 0.55, len * 0.86));
         }
+
+        scene.add(pivot);
+        doors.push(pivot);
     });
 
     /* النوافذ */
@@ -344,6 +353,7 @@ function buildApartment(scene, plan) {
             x0: cx(r.x), z0: cz(r.z), w: r.w, d: r.d,
             mx: cx(r.x + r.w / 2), mz: cz(r.z + r.d / 2),
             facing: r.facing || 'south',
+            sofaSide: r.sofaSide,
         };
         (FURNITURE[r.type] || (() => []))(R).forEach((m) => g.add(m));
 
@@ -351,23 +361,43 @@ function buildApartment(scene, plan) {
         pickables.push(g);
     });
 
-    return { pickables, rooms, W, D };
+    return { pickables, rooms, doors, W, D };
 }
 
 /* ── الإضاءة ─────────────────────────────────────────────────────── */
-function buildLights(scene) {
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xcbd5e1, 1.05));
-    const sun = new THREE.DirectionalLight(0xfff5e6, 1.6);
-    sun.position.set(8, 14, 6);
+function buildLights(scene, plan) {
+    const A = plan.apartment;
+    const W = A.width, D = A.depth;
+
+    // ضوء السماء العام — بارد من الأعلى ودافئ منعكس من الأرضية
+    scene.add(new THREE.HemisphereLight(0xdceaff, 0xc8ad8c, 0.7));
+
+    // شمس الرياض: ضوء رئيسي دافئ مع ظلال ناعمة
+    const sun = new THREE.DirectionalLight(0xfff1dc, 1.75);
+    sun.position.set(W * 0.55, Math.max(12, W * 0.9), D * 1.4);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    const s = 12;
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0006;
+    sun.shadow.normalBias = 0.02;
+    const s = Math.max(W, D) * 0.75;
     sun.shadow.camera.left = -s; sun.shadow.camera.right = s;
     sun.shadow.camera.top = s; sun.shadow.camera.bottom = -s;
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 60;
     scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xdbeafe, 0.45);
-    fill.position.set(-7, 6, -8);
+
+    // ضوء ملء بارد يوازن الظلال العميقة
+    const fill = new THREE.DirectionalLight(0xbfd8f5, 0.5);
+    fill.position.set(-W * 0.4, 7, -D);
     scene.add(fill);
+
+    // إنارة داخلية دافئة لكل غرفة — تحاكي الإضاءة المخفية في الصور
+    (plan.rooms || []).forEach((r) => {
+        const lamp = new THREE.PointLight(0xffd7a0, 4.2, Math.max(r.w, r.d) * 1.6, 2);
+        lamp.position.set(r.x + r.w / 2 - W / 2, 1.95, r.z + r.d / 2 - D / 2);
+        scene.add(lamp);
+
+    });
 }
 
 /* أزرار الغرف تُولَّد من الملف حتى تتطابق دائماً مع المخطط */
@@ -393,13 +423,15 @@ function init(container, plan) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;   // تدرّج لوني سينمائي
+    renderer.toneMappingExposure = 0.94;
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xeef2f7);
 
-    buildLights(scene);
-    const { pickables, rooms, W, D } = buildApartment(scene, plan);
+    buildLights(scene, plan);
+    const { pickables, rooms, doors, W, D } = buildApartment(scene, plan);
     buildChips(rooms);
 
     /* الكاميرا تُؤطَّر تلقائياً على الحجم الفعلي للشقة */
@@ -434,11 +466,68 @@ function init(container, plan) {
         pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        const hit = raycaster.intersectObjects(pickables, true)[0];
-        if (!hit) return;
-        let o = hit.object;
-        while (o && !o.userData.room) o = o.parent;
-        if (o) selectRoom(o.userData.room);
+
+        // الأبواب والشاشة لها الأولوية على تحديد الغرفة
+        const hits = raycaster.intersectObjects(doors.concat(pickables), true);
+        if (!hits.length) return;
+
+        let o = hits[0].object;
+        while (o && !o.userData.interactive && !o.userData.room) o = o.parent;
+        if (!o) return;
+
+        if (o.userData.interactive === 'door') return toggleDoor(o);
+        if (o.userData.interactive === 'tv') return toggleTv(o);
+        if (o.userData.room) selectRoom(o.userData.room);
+    });
+
+    /* فتح/إغلاق الباب بحركة انسيابية */
+    const doorAnims = [];
+    function toggleDoor(pivot) {
+        pivot.userData.open = !pivot.userData.open;
+        const target = pivot.userData.open ? pivot.userData.swing * Math.PI * 0.52 : 0;
+        doorAnims.push({ pivot, from: pivot.rotation.y, to: target, t: 0 });
+        hint(pivot.userData.open ? '🚪 فُتح الباب' : '🚪 أُغلق الباب');
+    }
+
+    /* تشغيل/إطفاء التلفزيون */
+    const tvLight = new THREE.PointLight(0x7fc4ff, 0, 3.2, 2);
+    scene.add(tvLight);
+
+    function toggleTv(screen) {
+        const on = !screen.userData.on;
+        screen.userData.on = on;
+        const m = screen.material;
+        m.color.set(on ? 0x14406e : 0x0d1117);
+        m.emissive.set(on ? 0x2f86d6 : 0x000000);
+        m.emissiveIntensity = on ? 1.5 : 0;
+        m.needsUpdate = true;
+
+        const a = screen.userData.tvAnchor;
+        if (a) tvLight.position.set(a[0], a[1], a[2]);
+        tvLight.intensity = on ? 6 : 0;
+        hint(on ? '📺 التلفزيون يعمل' : '📺 التلفزيون مطفأ');
+    }
+
+    /* رسالة قصيرة أسفل اللوحة */
+    let hintTimer = null;
+    function hint(text) {
+        if (!infoEl) return;
+        infoEl.innerHTML = `<b>${text}</b><span>اضغط مرة أخرى للعكس</span>`;
+        infoEl.classList.add('visible');
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(() => infoEl.classList.remove('visible'), 2200);
+    }
+
+    /* تغيير شكل المؤشر فوق العناصر التفاعلية */
+    renderer.domElement.addEventListener('pointermove', (e) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const h = raycaster.intersectObjects(doors.concat(pickables), true)[0];
+        let o = h && h.object;
+        while (o && !o.userData.interactive && !o.userData.room) o = o.parent;
+        renderer.domElement.style.cursor = o ? 'pointer' : 'grab';
     });
 
     function selectRoom(key) {
@@ -519,6 +608,15 @@ function init(container, plan) {
             const a = 0.12 * dt;
             p.set(p.x * Math.cos(a) - p.z * Math.sin(a), p.y, p.x * Math.sin(a) + p.z * Math.cos(a));
         }
+        // حركة فتح/إغلاق الأبواب
+        for (let i = doorAnims.length - 1; i >= 0; i--) {
+            const a = doorAnims[i];
+            a.t = Math.min(a.t + dt * 2.2, 1);
+            const e = 1 - Math.pow(1 - a.t, 3);           // تباطؤ في النهاية
+            a.pivot.rotation.y = a.from + (a.to - a.from) * e;
+            if (a.t >= 1) doorAnims.splice(i, 1);
+        }
+
         controls.update();
         renderer.render(scene, camera);
     });
