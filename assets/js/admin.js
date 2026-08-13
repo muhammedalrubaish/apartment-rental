@@ -103,7 +103,7 @@
                 id: 'p1', name: 'شقة السليمانية — RHSA7905', city: 'الرياض', district: 'حي السليمانية',
                 address: '7905 عبدالحميد الكاتب، السليمانية، الرياض 12245',
                 rooms: 1, beds: 1, baths: 1, area: 68, floor: 'الأرضي',
-                nightly: 294, status: 'active', img: 'assets/images/hero.png',
+                nightly: 294, status: 'active', img: 'assets/images/living.jpg',
                 platforms: ['جاذر إن', 'Airbnb'], license: '50034291',
             },
         ];
@@ -1279,7 +1279,7 @@
 
     function openPropertyForm(p) {
         const isNew = !p;
-        p = p || { name: '', city: 'الرياض', district: '', rooms: 1, baths: 1, area: 60, floor: 'الأرضي', nightly: 294, status: 'active', img: 'assets/images/hero.png', platforms: [] };
+        p = p || { name: '', city: 'الرياض', district: '', rooms: 1, baths: 1, area: 60, floor: 'الأرضي', nightly: 294, status: 'active', img: 'assets/images/living.jpg', platforms: [] };
 
         openModal(isNew ? 'إضافة وحدة' : 'تعديل الوحدة', `
             <div class="field"><label>اسم الوحدة</label><input class="input" id="p-name" value="${escapeHtml(p.name)}"></div>
@@ -1331,7 +1331,7 @@
             };
 
             if (isNew) {
-                state.properties.push(Object.assign({ id: uid(), floor: 'الأرضي', beds: 1, img: 'assets/images/hero.png', platforms: [] }, data));
+                state.properties.push(Object.assign({ id: uid(), floor: 'الأرضي', beds: 1, img: 'assets/images/living.jpg', platforms: [] }, data));
             } else {
                 Object.assign(p, data);
             }

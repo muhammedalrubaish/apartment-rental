@@ -233,20 +233,42 @@ body {
 /* Gallery Showcase */
 .gallery-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
     margin-bottom: 30px;
     border-radius: var(--radius);
     overflow: hidden;
-    height: 420px;
+    height: 460px;
     box-shadow: var(--shadow-md);
+}
+
+/* الصورة الرئيسية تشغل عمودها كاملاً */
+.gallery-item.main { grid-row: span 2; }
+
+/* تحسين إطار الصور العمودية */
+.gallery-item img { object-position: center 42%; }
+.gallery-item.main img { object-position: center 38%; }
+
+/* شاشات متوسطة: صفّان بثلاثة أعمدة */
+@media (max-width: 1024px) and (min-width: 721px) {
+    .gallery-grid { grid-template-columns: 2fr 1fr 1fr; height: 520px; }
+    .gallery-item:nth-child(n+6) { display: none; }
 }
 
 @media (max-width: 768px) {
     .gallery-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: none;
+        grid-auto-rows: 170px;
         height: auto;
     }
+
+    .gallery-item.main { grid-row: span 2; grid-column: span 2; }
+}
+
+@media (max-width: 420px) {
+    .gallery-grid { grid-auto-rows: 145px; }
 }
 
 .gallery-item {
