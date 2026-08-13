@@ -4,7 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>شقة متكاملة وأنيقة بدخول ذكي | الرياض - حي السليمانية</title>
+    <meta name="theme-color" content="#f2622a">
     <meta name="description" content="سكن أنيق ومتميز بدخول ذكي، موقع استراتيجي قرب المترو والمستشفيات، مطبخ مجهز بالكامل وشاشة ذكية وإنترنت عالي السرعة.">
+
+
+    <!-- بطاقة المشاركة (واتساب وتويتر) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="شقة متكاملة وأنيقة بدخول ذكي | الرياض">
+    <meta property="og:description" content="سكن أنيق بدخول ذكي، قريب من المترو والمستشفيات، مطبخ مجهز وشاشة ذكية وإنترنت عالي السرعة.">
+    <meta property="og:image" content="assets/images/living.jpg">
+    <meta property="og:locale" content="ar_SA">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- شعار التبويب -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="mask-icon" href="assets/favicon.svg" color="#f2622a">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,6 +40,9 @@
                 <span class="brand-badge">موثّق رسميًا</span>
             </a>
             <div class="nav-actions">
+                <a href="admin.html" class="btn-owner" title="لوحة تحكم المالك">
+                    📊 لوحة التحكم
+                </a>
                 <a href="https://wa.me/966549814764" target="_blank" class="btn-whatsapp">
                     📱 تواصل وحجز مباشر
                 </a>
@@ -78,20 +97,74 @@
             </div>
         </header>
 
-        <!-- Image Gallery Showcase -->
+        <!-- Image Gallery Showcase — صور الشقة الفعلية -->
         <section class="gallery-grid">
-            <div class="gallery-item">
-                <img src="assets/images/hero.png" alt="الصالة الرئيسية الشاشة الذكية">
-                <div class="gallery-caption">🛋️ الصالة الرئيسية: شاشة ذكية لمشاهدة ممتعة وأجواء مريحة</div>
+            <figure class="gallery-item main">
+                <img src="assets/images/living.jpg" alt="صالة الشقة مع الأريكة والشاشة الذكية" loading="eager" width="1200" height="1600">
+                <figcaption class="gallery-caption">🛋️ الصالة: أريكة مريحة وشاشة ذكية وإضاءة مخفية</figcaption>
+            </figure>
+
+            <figure class="gallery-item">
+                <img src="assets/images/bedroom.jpg" alt="غرفة النوم بسرير كوين" loading="lazy" width="1050" height="1400">
+                <figcaption class="gallery-caption">🛏️ سرير كوين</figcaption>
+            </figure>
+
+            <figure class="gallery-item">
+                <img src="assets/images/kitchen.jpg" alt="المطبخ المجهز بالكامل" loading="lazy" width="1050" height="1400">
+                <figcaption class="gallery-caption">🍳 مطبخ مجهز</figcaption>
+            </figure>
+
+            <figure class="gallery-item">
+                <img src="assets/images/bedroom-2.jpg" alt="غرفة النوم من زاوية أخرى مع التسريحة والمرآة" loading="lazy" width="900" height="1200">
+                <figcaption class="gallery-caption">🪞 تسريحة ومرآة</figcaption>
+            </figure>
+
+            <figure class="gallery-item">
+                <img src="assets/images/coffee.jpg" alt="ركن القهوة والشاي والثلاجة" loading="lazy" width="900" height="1200">
+                <figcaption class="gallery-caption">☕ ركن الضيافة</figcaption>
+            </figure>
+
+            <figure class="gallery-item">
+                <img src="assets/images/entrance.jpg" alt="مدخل الشقة A2 بقفل ذكي" loading="lazy" width="900" height="1200">
+                <figcaption class="gallery-caption">🔑 مدخل الشقة A2</figcaption>
+            </figure>
+
+            <figure class="gallery-item">
+                <img src="assets/images/building.jpg" alt="واجهة المبنى من الخارج" loading="lazy" width="900" height="1200">
+                <figcaption class="gallery-caption">🏢 واجهة المبنى</figcaption>
+            </figure>
+        </section>
+
+        <!-- 3D Apartment Model -->
+        <section class="card-section apt3d-section">
+            <h3 class="card-title">🏠 مجسم ثلاثي الأبعاد للشقة (3D)</h3>
+            <p class="description-text" style="margin-bottom: 12px;">
+                تجوّل في مخطط الشقة قبل الحجز: اسحب للتدوير، وقرّب بعجلة الفأرة أو بإصبعين. اضغط على أي غرفة لعرض مساحتها، وعلى <b>الباب ليُفتح</b>، وعلى <b>التلفزيون ليعمل</b>.
+            </p>
+
+            <div class="apt3d-chips">
+                <button type="button" class="apt3d-chip" data-room="entry">🔑 المدخل</button>
+                <button type="button" class="apt3d-chip" data-room="living">🛋️ الصالة</button>
+                <button type="button" class="apt3d-chip" data-room="bedroom">🛏️ غرفة النوم</button>
+                <button type="button" class="apt3d-chip" data-room="kitchen">🍳 المطبخ</button>
+                <button type="button" class="apt3d-chip" data-room="bath">🚿 دورة المياه</button>
+                <button type="button" class="apt3d-chip alt" id="apt3d-rotate">⏸️ إيقاف الدوران</button>
+                <button type="button" class="apt3d-chip alt" id="apt3d-reset">↺ عرض كامل</button>
             </div>
-            <div class="gallery-item">
-                <img src="assets/images/bedroom.png" alt="غرفة النوم الرئيسية">
-                <div class="gallery-caption">🛏️ غرفة النوم: سرير كوين فاخر مع إضاءة دافئة</div>
+
+            <div class="apt3d-stage">
+                <div id="apt3d-canvas" class="apt3d-canvas">
+                    <div class="apt3d-fallback">
+                        جارٍ تحميل المجسم ثلاثي الأبعاد…
+                        <small>إذا لم يظهر المجسم فقد يكون متصفحك لا يدعم WebGL.</small>
+                    </div>
+                </div>
+                <div id="apt3d-info" class="apt3d-info"></div>
             </div>
-            <div class="gallery-item">
-                <img src="assets/images/kitchen.png" alt="المطبخ المجهز والدخول الذكي">
-                <div class="gallery-caption">🍳 المطبخ المجهز والدخول الذكي بالبصمة</div>
-            </div>
+
+            <p class="apt3d-note">
+                * المقاسات مأخوذة من مخطط الشقة الفعلي (13.87 × 5.21 م). الأثاث توضيحي لبيان توزيع المساحات.
+            </p>
         </section>
 
         <!-- Specs Quick Summary -->
@@ -340,6 +413,15 @@
     </a>
 
     <!-- Application JavaScript -->
+    <!-- Three.js (مستضاف محلياً) لمجسم الشقة ثلاثي الأبعاد -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "./assets/vendor/three/three.module.min.js"
+      }
+    }
+    </script>
     <script src="assets/js/app.js"></script>
+    <script type="module" src="assets/js/apartment3d.js"></script>
 </body>
 </html>

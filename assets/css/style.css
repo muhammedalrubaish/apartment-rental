@@ -233,20 +233,42 @@ body {
 /* Gallery Showcase */
 .gallery-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
     margin-bottom: 30px;
     border-radius: var(--radius);
     overflow: hidden;
-    height: 420px;
+    height: 460px;
     box-shadow: var(--shadow-md);
+}
+
+/* الصورة الرئيسية تشغل عمودها كاملاً */
+.gallery-item.main { grid-row: span 2; }
+
+/* تحسين إطار الصور العمودية */
+.gallery-item img { object-position: center 42%; }
+.gallery-item.main img { object-position: center 38%; }
+
+/* شاشات متوسطة: صفّان بثلاثة أعمدة */
+@media (max-width: 1024px) and (min-width: 721px) {
+    .gallery-grid { grid-template-columns: 2fr 1fr 1fr; height: 520px; }
+    .gallery-item:nth-child(n+6) { display: none; }
 }
 
 @media (max-width: 768px) {
     .gallery-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: none;
+        grid-auto-rows: 170px;
         height: auto;
     }
+
+    .gallery-item.main { grid-row: span 2; grid-column: span 2; }
+}
+
+@media (max-width: 420px) {
+    .gallery-grid { grid-auto-rows: 145px; }
 }
 
 .gallery-item {
@@ -1302,4 +1324,129 @@ body {
     }
 
     .verify-badge { font-size: 11.5px; width: 100%; }
+}
+
+/* ==========================================================
+   مجسم الشقة ثلاثي الأبعاد (3D)
+   ========================================================== */
+.apt3d-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.apt3d-chip {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0369a1;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 20px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+
+.apt3d-chip:hover { background: #e0f2fe; transform: translateY(-1px); }
+
+.apt3d-chip.active {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #fff;
+}
+
+.apt3d-chip.alt {
+    color: #475569;
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+.apt3d-stage { position: relative; }
+
+.apt3d-canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    min-height: 280px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(160deg, #eef2f7, #dbe4ee);
+    border: 1px solid #e2e8f0;
+    touch-action: none;
+}
+
+.apt3d-canvas canvas { display: block; width: 100%; height: 100%; }
+
+.apt3d-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 20px;
+}
+
+.apt3d-fallback small { font-weight: 500; font-size: 12px; color: #94a3b8; }
+
+.apt3d-canvas.ready .apt3d-fallback { display: none; }
+
+.apt3d-info {
+    position: absolute;
+    inset-inline-start: 14px;
+    bottom: 14px;
+    max-width: 300px;
+    background: rgba(255, 255, 255, .94);
+    backdrop-filter: blur(6px);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .12);
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity .22s ease, transform .22s ease;
+}
+
+.apt3d-info.visible { opacity: 1; transform: translateY(0); }
+
+.apt3d-info b { display: block; font-size: 15px; color: var(--text-main, #0f172a); margin-bottom: 4px; }
+.apt3d-info span { display: block; font-size: 13px; line-height: 1.7; color: #475569; }
+
+.apt3d-note { margin-top: 10px; font-size: 12px; color: #94a3b8; }
+
+@media (max-width: 640px) {
+    .apt3d-canvas { aspect-ratio: 4 / 3; }
+    .apt3d-info { max-width: none; inset-inline: 10px; bottom: 10px; }
+    .apt3d-chip { font-size: 12px; padding: 7px 12px; }
+}
+
+/* رابط لوحة تحكم المالك في الشريط العلوي */
+.btn-owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    transition: all .2s ease;
+    white-space: nowrap;
+}
+
+.btn-owner:hover { background: #e2e8f0; color: #0f172a; }
+
+@media (max-width: 560px) {
+    .btn-owner { padding: 8px 12px; font-size: 12px; }
 }
