@@ -94,6 +94,38 @@
             </div>
         </section>
 
+        <!-- 3D Apartment Model -->
+        <section class="card-section apt3d-section">
+            <h3 class="card-title">🏠 مجسم ثلاثي الأبعاد للشقة (3D)</h3>
+            <p class="description-text" style="margin-bottom: 12px;">
+                تجوّل في مخطط الشقة قبل الحجز: اسحب للتدوير، استخدم عجلة الفأرة أو إصبعين للتكبير، واضغط على أي غرفة لعرض تفاصيلها.
+            </p>
+
+            <div class="apt3d-chips">
+                <button type="button" class="apt3d-chip" data-room="entry">🔑 المدخل</button>
+                <button type="button" class="apt3d-chip" data-room="living">🛋️ الصالة</button>
+                <button type="button" class="apt3d-chip" data-room="bedroom">🛏️ غرفة النوم</button>
+                <button type="button" class="apt3d-chip" data-room="kitchen">🍳 المطبخ</button>
+                <button type="button" class="apt3d-chip" data-room="bath">🚿 دورة المياه</button>
+                <button type="button" class="apt3d-chip alt" id="apt3d-rotate">⏸️ إيقاف الدوران</button>
+                <button type="button" class="apt3d-chip alt" id="apt3d-reset">↺ عرض كامل</button>
+            </div>
+
+            <div class="apt3d-stage">
+                <div id="apt3d-canvas" class="apt3d-canvas">
+                    <div class="apt3d-fallback">
+                        جارٍ تحميل المجسم ثلاثي الأبعاد…
+                        <small>إذا لم يظهر المجسم فقد يكون متصفحك لا يدعم WebGL.</small>
+                    </div>
+                </div>
+                <div id="apt3d-info" class="apt3d-info"></div>
+            </div>
+
+            <p class="apt3d-note">
+                * المجسم توضيحي لتوزيع الغرف والأثاث، والمقاسات تقريبية وقد تختلف بشكل بسيط عن الواقع.
+            </p>
+        </section>
+
         <!-- Specs Quick Summary -->
         <div class="quick-specs">
             <div class="spec-box">
@@ -340,6 +372,15 @@
     </a>
 
     <!-- Application JavaScript -->
+    <!-- Three.js (مستضاف محلياً) لمجسم الشقة ثلاثي الأبعاد -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "./assets/vendor/three/three.module.min.js"
+      }
+    }
+    </script>
     <script src="assets/js/app.js"></script>
+    <script type="module" src="assets/js/apartment3d.js"></script>
 </body>
 </html>
