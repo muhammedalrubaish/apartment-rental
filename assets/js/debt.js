@@ -121,14 +121,14 @@ function renderPayments(debtTotal) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${p.date}</td>
-            <td class="num-cell">${sar(p.amount)}</td>
+            <td class="num">${sar(p.amount)}</td>
             <td>${p.note ? p.note.replace(/[<>]/g, '') : '—'}</td>
-            <td class="num-cell">${sar(remaining)}</td>
-            <td><button type="button" class="btn-del" data-id="${p.id}">حذف</button></td>`;
+            <td class="num">${sar(remaining)}</td>
+            <td><button type="button" class="btn-x" data-id="${p.id}">حذف</button></td>`;
         body.appendChild(tr);
     });
 
-    body.querySelectorAll('.btn-del').forEach(btn => {
+    body.querySelectorAll('.btn-x').forEach(btn => {
         btn.addEventListener('click', () => {
             savePayments(loadPayments().filter(x => String(x.id) !== btn.dataset.id));
             recalc();
@@ -173,7 +173,7 @@ function renderPlatformOptions() {
     chips.innerHTML = '';
     list.forEach(name => {
         const chip = document.createElement('span');
-        chip.className = 'platform-chip';
+        chip.className = 'chip-tag';
         const isDefault = DEFAULT_PLATFORMS.includes(name);
         chip.innerHTML = `${name}${isDefault ? '' : ' <button type="button" class="chip-del" data-name="' + name + '">×</button>'}`;
         chips.appendChild(chip);
@@ -219,13 +219,13 @@ function renderBookings() {
             tr.innerHTML = `
                 <td>${bk.date}</td>
                 <td>${esc(bk.platform)}</td>
-                <td>${esc(bk.method)}</td>
-                <td class="num-cell">${bk.nights}</td>
-                <td class="num-cell">${fmt(bk.amount)}</td>
-                <td class="num-cell danger">${fmt(bk.fee)}</td>
-                <td class="num-cell strong">${fmt(net)}</td>
+                <td><span class="pill ${methodPill(bk.method)}">${esc(bk.method)}</span></td>
+                <td class="num">${bk.nights}</td>
+                <td class="num">${fmt(bk.amount)}</td>
+                <td class="num red">${fmt(bk.fee)}</td>
+                <td class="num green">${fmt(net)}</td>
                 <td>${bk.note ? esc(bk.note) : '—'}</td>
-                <td><button type="button" class="btn-del" data-id="${bk.id}">حذف</button></td>`;
+                <td><button type="button" class="btn-x" data-id="${bk.id}">حذف</button></td>`;
             body.appendChild(tr);
         });
 
@@ -233,15 +233,15 @@ function renderBookings() {
         foot.className = 'total-row';
         foot.innerHTML = `
             <td colspan="3">الإجمالي</td>
-            <td class="num-cell">${nights}</td>
-            <td class="num-cell">${fmt(gross)}</td>
-            <td class="num-cell danger">${fmt(fees)}</td>
-            <td class="num-cell strong">${fmt(gross - fees)}</td>
+            <td class="num">${nights}</td>
+            <td class="num">${fmt(gross)}</td>
+            <td class="num red">${fmt(fees)}</td>
+            <td class="num green">${fmt(gross - fees)}</td>
             <td colspan="2"></td>`;
         body.appendChild(foot);
     }
 
-    body.querySelectorAll('.btn-del').forEach(btn => {
+    body.querySelectorAll('.btn-x').forEach(btn => {
         btn.addEventListener('click', () => {
             saveBookings(loadBookings().filter(x => String(x.id) !== btn.dataset.id));
             recalc();
@@ -252,6 +252,8 @@ function renderBookings() {
     setText('bk-fees', sar(fees));
     setText('bk-net', sar(gross - fees));
     setText('bk-count', `${list.length} حجز / ${nights} ليلة`);
+
+    renderPlatformBars(byPlatform);
 
     /* جدول الأرباح حسب التطبيق */
     const pBody = document.getElementById('platform-body');
@@ -266,16 +268,210 @@ function renderBookings() {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${esc(name)}</td>
-                <td class="num-cell">${a.count}</td>
-                <td class="num-cell">${fmt(a.gross)}</td>
-                <td class="num-cell danger">${fmt(a.fee)}</td>
-                <td class="num-cell strong">${fmt(a.gross - a.fee)}</td>
-                <td class="num-cell">${pct.toFixed(1)}%</td>`;
+                <td class="num">${a.count}</td>
+                <td class="num">${fmt(a.gross)}</td>
+                <td class="num red">${fmt(a.fee)}</td>
+                <td class="num green">${fmt(a.gross - a.fee)}</td>
+                <td class="num">${pct.toFixed(1)}%</td>`;
             pBody.appendChild(tr);
         });
     }
 
     return { gross, fees, net: gross - fees, nights };
+}
+
+/* ---------- عناصر اللوحة الرسومية ---------- */
+
+const PILL_BY_METHOD = {
+    'عبر المنصة': 'green',
+    'تحويل بنكي': 'teal',
+    'نقداً': 'yellow',
+    'شبكة / مدى': 'teal',
+    'Apple Pay': 'gray',
+    'محفظة إلكترونية': 'gray'
+};
+
+const methodPill = m => PILL_BY_METHOD[m] || 'gray';
+
+const PLATFORM_COLORS = ['#4ade80', '#a3e635', '#facc15', '#2dd4bf', '#38bdf8', '#c084fc'];
+
+/* دونات المصاريف التشغيلية */
+function renderDonut(clean, power, internet) {
+    const C = 2 * Math.PI * 50;
+    const total = clean + power + internet;
+    const segs = [
+        ['seg-clean', clean],
+        ['seg-power', power],
+        ['seg-net', internet]
+    ];
+
+    let offset = 0;
+    segs.forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const len = total > 0 ? (val / total) * C : 0;
+        /* فجوة بسيطة بين الأقسام لتبدو منفصلة */
+        const gap = len > 6 ? 3 : 0;
+        el.setAttribute('stroke-dasharray', `${Math.max(len - gap, 0)} ${C}`);
+        el.setAttribute('stroke-dashoffset', `${-offset}`);
+        offset += len;
+    });
+}
+
+/* رسم منحنى ناعم من قائمة قيم */
+function smoothPath(values, w, h, pad) {
+    if (values.length < 2) return '';
+    const max = Math.max(...values, 1);
+    const min = Math.min(...values, 0);
+    const range = max - min || 1;
+    const stepX = (w - pad * 2) / (values.length - 1);
+
+    const pts = values.map((v, i) => [
+        pad + i * stepX,
+        h - pad - ((v - min) / range) * (h - pad * 2)
+    ]);
+
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const [x1, y1] = pts[i];
+        const [x2, y2] = pts[i + 1];
+        const cx = (x1 + x2) / 2;
+        d += ` C ${cx.toFixed(1)} ${y1.toFixed(1)}, ${cx.toFixed(1)} ${y2.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    }
+    return d;
+}
+
+/* منحنى: المتبقي من الدين + الأرباح التراكمية */
+function renderTrend(debtTotal, payments, bookings) {
+    const svg = document.getElementById('trend-chart');
+    if (!svg) return;
+
+    const W = 320, H = 120, PAD = 10;
+
+    /* المتبقي من الدين عبر الدفعات */
+    const remainSeries = [debtTotal];
+    let acc = 0;
+    payments.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(p => {
+        acc += p.amount;
+        remainSeries.push(Math.max(debtTotal - acc, 0));
+    });
+
+    /* صافي الأرباح التراكمي */
+    const profitSeries = [0];
+    let pacc = 0;
+    bookings.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(b => {
+        pacc += (b.amount - b.fee);
+        profitSeries.push(pacc);
+    });
+
+    /* توحيد المقياس بين المنحنيين */
+    const scaleMax = Math.max(debtTotal, pacc, 1);
+    const norm = arr => arr.map(v => (v / scaleMax) * 100);
+
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="gradRemain" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#4ade80" stop-opacity="0.35"></stop>
+                <stop offset="100%" stop-color="#4ade80" stop-opacity="0"></stop>
+            </linearGradient>
+        </defs>`;
+
+    const mk = (d, stroke, width, fill) => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('fill', fill || 'none');
+        if (stroke) {
+            path.setAttribute('stroke', stroke);
+            path.setAttribute('stroke-width', width);
+            path.setAttribute('stroke-linecap', 'round');
+        }
+        path.setAttribute('vector-effect', 'non-scaling-stroke');
+        svg.appendChild(path);
+    };
+
+    const rd = smoothPath(norm(remainSeries.length > 1 ? remainSeries : [debtTotal, debtTotal]), W, H, PAD);
+    if (rd) {
+        mk(`${rd} L ${W - PAD} ${H - PAD} L ${PAD} ${H - PAD} Z`, null, 0, 'url(#gradRemain)');
+        mk(rd, '#4ade80', 2);
+    }
+
+    const pd = smoothPath(norm(profitSeries.length > 1 ? profitSeries : [0, 0]), W, H, PAD);
+    if (pd) mk(pd, '#a3e635', 2);
+
+    setText('trend-note',
+        `— المتبقي من الدين (أخضر) • الأرباح التراكمية (ليموني): ${sar(pacc)}`);
+}
+
+/* أشرطة توزيع الأرباح حسب المنصة */
+function renderPlatformBars(byPlatform) {
+    const bars = document.getElementById('platform-bars');
+    const legend = document.getElementById('platform-legend');
+    if (!bars || !legend) return;
+
+    bars.innerHTML = '';
+    legend.innerHTML = '';
+
+    const names = Object.keys(byPlatform);
+    const total = names.reduce((s, n) => s + byPlatform[n].gross, 0);
+
+    if (!total) {
+        bars.innerHTML = '<div class="seg-item" style="flex:1"><div class="seg-pct" style="color:#77837e">—</div><div class="seg-bar"></div></div>';
+        legend.innerHTML = '<span class="legend-item"><span class="legend-name">أضف حجزاً لعرض التوزيع</span></span>';
+        return;
+    }
+
+    names.sort((a, b) => byPlatform[b].gross - byPlatform[a].gross).forEach((name, i) => {
+        const share = (byPlatform[name].gross / total) * 100;
+        const color = PLATFORM_COLORS[i % PLATFORM_COLORS.length];
+
+        const item = document.createElement('div');
+        item.className = 'seg-item';
+        item.style.flex = share;
+        item.innerHTML = `
+            <div class="seg-pct">${share.toFixed(0)}%</div>
+            <div class="seg-bar" style="background:${color}"></div>`;
+        bars.appendChild(item);
+
+        const lg = document.createElement('span');
+        lg.className = 'legend-item';
+        lg.innerHTML = `
+            <span class="legend-dot" style="background:${color}"></span>
+            <span class="legend-name">${esc(name)}</span>`;
+        legend.appendChild(lg);
+    });
+}
+
+/* الجدول الزمني للأشهر */
+let timelineExpanded = false;
+
+function renderTimeline(months, monthlyRent, cleanFirst, cleanRest, power, internet) {
+    const body = document.getElementById('timeline-body');
+    if (!body) return;
+
+    body.innerHTML = '';
+    const limit = timelineExpanded ? months : Math.min(months, 5);
+
+    for (let i = 0; i < limit; i++) {
+        const clean = i < 2 ? cleanFirst : cleanRest;
+        const total = monthlyRent + clean + power + internet;
+
+        const item = document.createElement('div');
+        item.className = 'tl-item';
+        item.innerHTML = `
+            <div class="tl-date">
+                <b>${String(i + 1).padStart(2, '0')}</b>
+                <span>شهر</span>
+            </div>
+            <div class="tl-body">
+                <h5>${MONTH_NAMES[i] || 'الشهر ' + (i + 1)}</h5>
+                <p>إيجار ${fmt(monthlyRent)} • تشغيل ${fmt(clean + power + internet)}</p>
+            </div>
+            <div class="tl-amt">${fmt(total)}</div>`;
+        body.appendChild(item);
+    }
+
+    const btn = document.getElementById('btn-view-all');
+    if (btn) btn.textContent = timelineExpanded ? 'عرض أقل' : `عرض كل الأشهر (${months})`;
 }
 
 /* ---------- العمولة ---------- */
@@ -311,18 +507,24 @@ function recalc() {
     setText('kpi-debt', sar(debtTotal));
     setText('kpi-paid', sar(paid));
     setText('kpi-remaining', sar(remaining));
-    setText('side-remaining', fmt(remaining));
+    setText('sb-remaining', sar(remaining));
+    const dcEl = document.getElementById('dc-remaining');
+    if (dcEl) dcEl.innerHTML = `${fmt(remaining)} <small>ريال</small>`;
+    setText('pay-count-chip', `${loadPayments().length} دفعة`);
 
     const pct = debtTotal > 0 ? Math.min((paid / debtTotal) * 100, 100) : 0;
     const bar = document.getElementById('debt-progress');
     if (bar) bar.style.width = pct.toFixed(1) + '%';
-    setText('debt-progress-label',
-        remaining === 0 && debtTotal > 0
-            ? '🎉 تم سداد كامل الدين للوالدة'
-            : `تم سداد ${pct.toFixed(1)}% — متبقٍ ${sar(remaining)}`);
+    const progressText = remaining === 0 && debtTotal > 0
+        ? '🎉 تم سداد كامل الدين للوالدة'
+        : `تم سداد ${pct.toFixed(1)}% — متبقٍ ${sar(remaining)}`;
+    setText('debt-progress-label', progressText);
+    setText('sb-remaining-note', progressText);
+    setText('dc-pct', `${pct.toFixed(1)}% مسدَّد`);
 
     /* الحجوزات والأرباح */
     renderBookings();
+    renderTrend(debtTotal, loadPayments(), loadBookings());
 
     /* المصاريف التشغيلية */
     const cleanFirst = num('in-clean-first');
@@ -345,6 +547,15 @@ function recalc() {
     setText('out-opex-monthly', sar(opexMonthly));
     setText('out-opex-total', sar(opexTotal));
 
+    renderDonut(cleanTotal, powerTotal, internetTotal);
+    setText('donut-total', fmt(opexTotal));
+    setText('opex-total-chip', sar(opexTotal));
+    setText('lg-clean', fmt(cleanTotal));
+    setText('lg-power', fmt(powerTotal));
+    setText('lg-net', fmt(internetTotal));
+    setText('lg-monthly', fmt(opexMonthly));
+    renderTimeline(months, monthlyRent, cleanFirst, cleanRest, power, internet);
+
     /* الجدول الشهري */
     const mBody = document.getElementById('months-body');
     mBody.innerHTML = '';
@@ -354,11 +565,11 @@ function recalc() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${MONTH_NAMES[i] || 'الشهر ' + (i + 1)}</td>
-            <td class="num-cell">${fmt(monthlyRent)}</td>
-            <td class="num-cell">${fmt(clean)}</td>
-            <td class="num-cell">${fmt(power)}</td>
-            <td class="num-cell">${fmt(internet)}</td>
-            <td class="num-cell strong">${fmt(total)}</td>`;
+            <td class="num">${fmt(monthlyRent)}</td>
+            <td class="num">${fmt(clean)}</td>
+            <td class="num">${fmt(power)}</td>
+            <td class="num">${fmt(internet)}</td>
+            <td class="num green">${fmt(total)}</td>`;
         mBody.appendChild(tr);
     }
     const grandRent = monthlyRent * months;
@@ -366,11 +577,11 @@ function recalc() {
     foot.className = 'total-row';
     foot.innerHTML = `
         <td>الإجمالي</td>
-        <td class="num-cell">${fmt(grandRent)}</td>
-        <td class="num-cell">${fmt(cleanTotal)}</td>
-        <td class="num-cell">${fmt(powerTotal)}</td>
-        <td class="num-cell">${fmt(internetTotal)}</td>
-        <td class="num-cell strong">${fmt(grandRent + opexTotal)}</td>`;
+        <td class="num">${fmt(grandRent)}</td>
+        <td class="num">${fmt(cleanTotal)}</td>
+        <td class="num">${fmt(powerTotal)}</td>
+        <td class="num">${fmt(internetTotal)}</td>
+        <td class="num green">${fmt(grandRent + opexTotal)}</td>`;
     mBody.appendChild(foot);
 
     /* الدخل بعد العمولة */
@@ -396,15 +607,18 @@ function recalc() {
         setText('out-nights-needed', '✅ لا يوجد متبقٍ');
         setText('out-months-needed', '—');
         setText('kpi-nights', '✅ مسدَّد');
+        setText('dc-nights', '✅ مسدَّد بالكامل');
     } else if (netAfterOpexNight <= 0) {
         setText('out-nights-needed', 'صافي الليلة صفر أو أقل');
         setText('out-months-needed', '—');
         setText('kpi-nights', '—');
+        setText('dc-nights', '—');
     } else {
         const nightsNeeded = Math.ceil(remaining / netAfterOpexNight);
         setText('out-nights-needed', `${nightsNeeded} ليلة`);
         setText('out-months-needed', `${(nightsNeeded / (30 * 0.6)).toFixed(1)} شهر`);
         setText('kpi-nights', `${nightsNeeded} ليلة`);
+        setText('dc-nights', `${nightsNeeded} ليلة للسداد`);
     }
 }
 
@@ -496,6 +710,52 @@ function initApp() {
             e.preventDefault();
             document.getElementById('btn-add-platform').click();
         }
+    });
+
+    /* تاريخ اليوم في الشريط العلوي */
+    const today = new Date();
+    setText('today-chip', '📅 ' + today.toLocaleDateString('ar-SA-u-ca-gregory',
+        { weekday: 'long', day: 'numeric', month: 'long' }));
+
+    /* التنقل من السايدبار */
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sb-overlay');
+
+    const closeSidebar = () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    };
+
+    document.getElementById('tb-menu').addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
+    const goTo = (id) => {
+        const target = document.getElementById(id);
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        closeSidebar();
+    };
+
+    document.querySelectorAll('.sb-link[data-target]').forEach(link => {
+        link.addEventListener('click', () => {
+            document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            goTo(link.dataset.target);
+        });
+    });
+
+    document.querySelectorAll('[data-jump]').forEach(btn => {
+        btn.addEventListener('click', () => goTo(btn.dataset.jump));
+    });
+
+    /* توسيع الجدول الزمني */
+    document.getElementById('btn-view-all').addEventListener('click', () => {
+        timelineExpanded = !timelineExpanded;
+        recalc();
     });
 
     document.getElementById('btn-lock').addEventListener('click', () => {

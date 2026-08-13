@@ -4,37 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>حاسبة تحصيل الدين | شقة السليمانية</title>
+    <meta name="theme-color" content="#0a0c0b">
+    <title>لوحة تحصيل الدين | شقة السليمانية</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body>
 
-    <!-- Password Gate -->
+    <!-- ===== بوابة الدخول ===== -->
     <div id="lock-screen" class="lock-screen">
         <div class="lock-box">
-
             <div class="lock-classification">سري • للمالك حصراً</div>
 
             <div class="lock-emblem">
                 <svg viewBox="0 0 120 120" role="img" aria-label="ميزان العدالة">
                     <circle cx="60" cy="60" r="56" class="em-ring"></circle>
                     <circle cx="60" cy="60" r="50" class="em-ring-thin"></circle>
-                    <!-- العمود والقاعدة -->
                     <path d="M60 32 V88" class="em-line"></path>
                     <path d="M46 96 h28 l-6 -8 h-16 Z" class="em-fill"></path>
                     <path d="M40 99 h40" class="em-line"></path>
-                    <!-- الذراع -->
                     <path d="M24 40 H96" class="em-line"></path>
                     <circle cx="60" cy="30" r="4" class="em-fill"></circle>
-                    <!-- الكفة اليمنى -->
                     <path d="M24 40 L12 52 M24 40 L36 52" class="em-line-thin"></path>
                     <path d="M12 52 Q24 70 36 52 Z" class="em-pan"></path>
-                    <!-- الكفة اليسرى -->
                     <path d="M96 40 L84 52 M96 40 L108 52" class="em-line-thin"></path>
                     <path d="M84 52 Q96 70 108 52 Z" class="em-pan"></path>
                 </svg>
@@ -44,17 +40,14 @@
 
             <h1>حاسبة تحصيل الدين</h1>
             <div class="lock-subtitle">سجل المطالبة والتسوية المالية</div>
-
             <p>هذه الوثيقة خاصة بالمالك حصراً.<br>يُرجى إدخال رمز الدخول للاطلاع على تفاصيل التحصيل.</p>
 
             <form id="lock-form" autocomplete="off">
                 <div class="lock-field">
                     <span class="lock-field-icon">🔑</span>
-                    <input type="password" id="lock-input" class="form-control" placeholder="رمز الدخول" autocomplete="current-password">
+                    <input type="password" id="lock-input" placeholder="رمز الدخول" autocomplete="current-password">
                 </div>
-                <button type="submit" class="btn-lock-enter">
-                    <span>فتح الملف</span>
-                </button>
+                <button type="submit" class="btn-lock-enter">فتح الملف</button>
             </form>
 
             <div id="lock-error" class="lock-error"></div>
@@ -69,335 +62,449 @@
         </div>
     </div>
 
-    <!-- Protected Content -->
+    <!-- ===== اللوحة ===== -->
     <div id="debt-app" hidden>
+    <div class="app">
 
-        <nav class="navbar">
-            <div class="nav-container">
-                <a href="index.html" class="brand-logo">
-                    🏢 شقة الفخامة الذكية
-                    <span class="brand-badge">لوحة خاصة</span>
-                </a>
-                <div class="nav-actions">
-                    <button type="button" id="btn-lock" class="btn-ghost">🔒 قفل الصفحة</button>
-                </div>
+        <!-- السايدبار -->
+        <aside class="sidebar" id="sidebar">
+            <a href="index.html" class="sb-brand">
+                <span class="sb-mark">◈</span>
+                <span>لوحة التحصيل</span>
+            </a>
+
+            <div class="sb-group-title">الرئيسية</div>
+            <button type="button" class="sb-link active" data-target="sec-overview"><span class="sb-ico">◎</span> نظرة عامة</button>
+            <button type="button" class="sb-link" data-target="sec-debt"><span class="sb-ico">▤</span> أساس الدين</button>
+            <button type="button" class="sb-link" data-target="sec-payments"><span class="sb-ico">↯</span> الدفعات</button>
+            <button type="button" class="sb-link" data-target="sec-bookings"><span class="sb-ico">▦</span> الحجوزات والأرباح</button>
+
+            <div class="sb-group-title">التحليل</div>
+            <button type="button" class="sb-link" data-target="sec-opex"><span class="sb-ico">◔</span> المصاريف التشغيلية</button>
+            <button type="button" class="sb-link" data-target="sec-schedule"><span class="sb-ico">☰</span> الجدول الشهري</button>
+            <button type="button" class="sb-link" data-target="sec-calc"><span class="sb-ico">✦</span> حاسبة العمولة</button>
+
+            <div class="sb-group-title">أدوات</div>
+            <a href="index.html" class="sb-link"><span class="sb-ico">⌂</span> صفحة الشقة</a>
+            <button type="button" class="sb-link" id="btn-lock"><span class="sb-ico">⎋</span> قفل الصفحة</button>
+
+            <div class="sb-card">
+                <h4>المتبقي للوالدة</h4>
+                <div class="sb-card-val" id="sb-remaining">—</div>
+                <p id="sb-remaining-note">—</p>
             </div>
-        </nav>
+        </aside>
 
-        <div class="main-container">
+        <div class="sb-overlay" id="sb-overlay"></div>
 
-            <header class="hero-header">
-                <span style="color: var(--primary); font-size: 13px; font-weight: 800;">💰 لوحة خاصة • غير مدرجة في محركات البحث</span>
-                <h1 style="font-size: 26px; font-weight: 900; margin-top: 4px; color: var(--text-main);">
-                    حاسبة تحصيل الدين والمصاريف التشغيلية
-                </h1>
-                <p class="description-text" style="margin-top: 10px;">
-                    الوالدة تطلب <b>قيمة الإيجار فقط</b> الذي دفعته نيابةً عني — بدون أي أرباح أو تصفية حسابات.
-                    المصاريف التشغيلية وحساب الأرباح مذكورة هنا للمتابعة الشخصية فقط ولا تدخل في الدين.
-                </p>
+        <!-- المحتوى -->
+        <div class="app-main">
+
+            <header class="topbar">
+                <button type="button" class="tb-menu" id="tb-menu" aria-label="القائمة">☰</button>
+                <span class="chip" id="today-chip">📅 —</span>
+                <span class="chip">🔒 وضع خاص</span>
+                <div class="tb-avatar">م</div>
+                <div class="tb-title">
+                    لوحة تحصيل الدين
+                    <span>شقة السليمانية • RHSA7905</span>
+                </div>
             </header>
 
-            <!-- Top KPI Summary -->
-            <div class="quick-specs" id="kpi-strip">
-                <div class="spec-box">
-                    <div class="icon">📄</div>
-                    <div class="label">قيمة العقد (سنة)</div>
-                    <div class="val" id="kpi-contract">—</div>
-                </div>
-                <div class="spec-box">
-                    <div class="icon">🧾</div>
-                    <div class="label">الدين الأصلي للوالدة</div>
-                    <div class="val" id="kpi-debt">—</div>
-                </div>
-                <div class="spec-box">
-                    <div class="icon">✅</div>
-                    <div class="label">المسدَّد حتى الآن</div>
-                    <div class="val" id="kpi-paid">—</div>
-                </div>
-                <div class="spec-box">
-                    <div class="icon">⏳</div>
-                    <div class="label">المتبقي</div>
-                    <div class="val" id="kpi-remaining">—</div>
-                </div>
-                <div class="spec-box">
-                    <div class="icon">🌙</div>
-                    <div class="label">ليالٍ لسداد المتبقي</div>
-                    <div class="val" id="kpi-nights">—</div>
-                </div>
+            <div class="dash-grid">
+
+                <!-- بطاقة الدين + إجراءات سريعة -->
+                <section class="card span-4" id="sec-overview">
+                    <div class="card-head">
+                        <h3>إجراءات سريعة</h3>
+                        <span class="dots">⋯</span>
+                    </div>
+
+                    <div class="quick-row">
+                        <button type="button" class="qbtn primary" data-jump="sec-payments">＋ دفعة</button>
+                        <button type="button" class="qbtn" data-jump="sec-bookings">▦ حجز</button>
+                        <button type="button" class="qbtn" data-jump="sec-schedule">☰ الجدول</button>
+                    </div>
+
+                    <div class="debt-card">
+                        <div class="dc-top">
+                            <span class="dc-brand">DEBT</span>
+                            <span class="dc-num">RHSA • 7905</span>
+                        </div>
+                        <div class="dc-label">المتبقي للوالدة</div>
+                        <div class="dc-val" id="dc-remaining">— <small>ريال</small></div>
+                        <div class="dc-foot">
+                            <span class="pct-badge" id="dc-pct">—</span>
+                            <span class="dc-num" id="dc-nights">—</span>
+                        </div>
+                    </div>
+
+                    <div class="bar-track"><div class="bar-fill" id="debt-progress"></div></div>
+                    <div class="bar-note" id="debt-progress-label">—</div>
+                </section>
+
+                <!-- ملخص الدين -->
+                <section class="card span-4">
+                    <div class="card-head">
+                        <div>
+                            <h3>ملخص المطالبة</h3>
+                            <span class="sub">الإيجار فقط — بدون أرباح</span>
+                        </div>
+                        <span class="dots">⋯</span>
+                    </div>
+
+                    <div class="dc-label" style="margin-top:0">الدين الأصلي</div>
+                    <div class="dc-val" id="kpi-debt">—</div>
+
+                    <div class="stat-row" style="margin-top:16px">
+                        <div class="stat">
+                            <div class="s-label">قيمة العقد (سنة)</div>
+                            <div class="s-val" id="kpi-contract">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="s-label">المسدَّد</div>
+                            <div class="s-val green" id="kpi-paid">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="s-label">المتبقي</div>
+                            <div class="s-val yellow" id="kpi-remaining">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="s-label">ليالٍ للسداد</div>
+                            <div class="s-val" id="kpi-nights">—</div>
+                        </div>
+                    </div>
+
+                    <div class="note">
+                        الوالدة تطلب قيمة الإيجار فقط الذي دفعته نيابةً عني — بدون أرباح أو تصفية حسابات.
+                    </div>
+                </section>
+
+                <!-- توزيع المصاريف + الرسم -->
+                <section class="card span-4">
+                    <div class="card-head">
+                        <div>
+                            <h3>توزيع التشغيل</h3>
+                            <span class="sub">نظافة • كهرباء • إنترنت</span>
+                        </div>
+                        <span class="chip" id="opex-total-chip">—</span>
+                    </div>
+
+                    <div class="donut-wrap">
+                        <div class="donut">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="d-track" cx="60" cy="60" r="50"></circle>
+                                <circle class="d-seg" id="seg-clean" cx="60" cy="60" r="50" stroke="#4ade80"></circle>
+                                <circle class="d-seg" id="seg-power" cx="60" cy="60" r="50" stroke="#a3e635"></circle>
+                                <circle class="d-seg" id="seg-net" cx="60" cy="60" r="50" stroke="#facc15"></circle>
+                            </svg>
+                            <div class="donut-center">
+                                <b id="donut-total">—</b>
+                                <span>إجمالي سنوي</span>
+                            </div>
+                        </div>
+
+                        <div class="legend">
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:#4ade80"></span>
+                                <span class="legend-name">النظافة</span>
+                                <span class="legend-val" id="lg-clean">—</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:#a3e635"></span>
+                                <span class="legend-name">الكهرباء</span>
+                                <span class="legend-val" id="lg-power">—</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:#facc15"></span>
+                                <span class="legend-name">الإنترنت</span>
+                                <span class="legend-val" id="lg-net">—</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot" style="background:#2dd4bf"></span>
+                                <span class="legend-name">شهرياً</span>
+                                <span class="legend-val" id="lg-monthly">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <svg class="chart" id="trend-chart" viewBox="0 0 320 120" preserveAspectRatio="none"></svg>
+                    <div class="chart-note" id="trend-note">—</div>
+                </section>
+
+                <!-- أساس الدين -->
+                <section class="card span-6" id="sec-debt">
+                    <div class="card-head">
+                        <h3>🧮 أساس الدين</h3>
+                        <span class="dots">⋯</span>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="fld">
+                            <label>قيمة العقد لمدة سنة (ريال)</label>
+                            <input type="number" id="in-contract" value="37000" min="0" step="any">
+                        </div>
+                        <div class="fld">
+                            <label>المبلغ الذي دفعته الوالدة</label>
+                            <input type="number" id="in-paid-by-mom" value="18500" min="0" step="any">
+                        </div>
+                    </div>
+
+                    <div class="calc-list">
+                        <div class="calc-line"><span>الإيجار الشهري (العقد ÷ 12)</span><b id="out-monthly-rent">—</b></div>
+                        <div class="calc-line"><span>نصف السنة حسب العقد</span><b id="out-half-contract">—</b></div>
+                        <div class="calc-line"><span>الفرق عن نصف العقد</span><b id="out-diff">—</b></div>
+                        <div class="calc-line total"><span>إجمالي الدين للوالدة</span><b id="out-debt-total">—</b></div>
+                    </div>
+                </section>
+
+                <!-- الدفعات -->
+                <section class="card span-6" id="sec-payments">
+                    <div class="card-head">
+                        <h3>💵 سجل الدفعات</h3>
+                        <span class="chip" id="pay-count-chip">—</span>
+                    </div>
+
+                    <form id="payment-form" class="form-grid">
+                        <div class="fld">
+                            <label>التاريخ</label>
+                            <input type="date" id="pay-date" required>
+                        </div>
+                        <div class="fld">
+                            <label>المبلغ (ريال)</label>
+                            <input type="number" id="pay-amount" min="0" step="any" placeholder="2000" required>
+                        </div>
+                        <div class="fld">
+                            <label>ملاحظة</label>
+                            <input type="text" id="pay-note" placeholder="تحويل بنكي">
+                        </div>
+                        <div class="fld fld-btn">
+                            <button type="submit" class="btn-full">＋ إضافة دفعة</button>
+                        </div>
+                    </form>
+
+                    <div class="tbl-wrap">
+                        <table class="tbl">
+                            <thead>
+                                <tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th><th>المتبقي بعدها</th><th></th></tr>
+                            </thead>
+                            <tbody id="payments-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- الحجوزات -->
+                <section class="card span-8" id="sec-bookings">
+                    <div class="card-head">
+                        <div>
+                            <h3>📒 سجل الحجوزات والأرباح</h3>
+                            <span class="sub">الصافي بعد العمولة الفعلية</span>
+                        </div>
+                        <span class="dots">⋯</span>
+                    </div>
+
+                    <div class="stat-row" style="margin-bottom:16px">
+                        <div class="stat">
+                            <div class="s-label">إجمالي الدخل</div>
+                            <div class="s-val" id="bk-gross">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="s-label">إجمالي العمولات</div>
+                            <div class="s-val red" id="bk-fees">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="s-label">صافي الأرباح</div>
+                            <div class="s-val green" id="bk-net">—</div>
+                        </div>
+                        <div class="stat">
+                            <div class="s-label">حجوزات / ليالٍ</div>
+                            <div class="s-val" id="bk-count">—</div>
+                        </div>
+                    </div>
+
+                    <div class="seg-bars" id="platform-bars"></div>
+                    <div class="legend-row" id="platform-legend"></div>
+
+                    <form id="booking-form" class="form-grid" style="margin-top:16px">
+                        <div class="fld">
+                            <label>تاريخ الحجز</label>
+                            <input type="date" id="bk-date" required>
+                        </div>
+                        <div class="fld">
+                            <label>التطبيق / المنصة</label>
+                            <select id="bk-platform" required></select>
+                        </div>
+                        <div class="fld">
+                            <label>طريقة الدفع</label>
+                            <select id="bk-method" required>
+                                <option value="عبر المنصة">عبر المنصة</option>
+                                <option value="تحويل بنكي">تحويل بنكي</option>
+                                <option value="نقداً">نقداً</option>
+                                <option value="شبكة / مدى">شبكة / مدى</option>
+                                <option value="Apple Pay">Apple Pay</option>
+                                <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+                            </select>
+                        </div>
+                        <div class="fld">
+                            <label>عدد الليالي</label>
+                            <input type="number" id="bk-nights" min="1" step="1" value="1" required>
+                        </div>
+                        <div class="fld">
+                            <label>المبلغ الإجمالي</label>
+                            <input type="number" id="bk-amount" min="0" step="any" placeholder="588" required>
+                        </div>
+                        <div class="fld">
+                            <label>العمولة المخصومة</label>
+                            <input type="number" id="bk-fee" min="0" step="any" placeholder="66" required>
+                        </div>
+                        <div class="fld">
+                            <label>ملاحظة</label>
+                            <input type="text" id="bk-note" placeholder="اسم الضيف / رقم الحجز">
+                        </div>
+                        <div class="fld fld-btn">
+                            <button type="submit" class="btn-full">＋ إضافة حجز</button>
+                        </div>
+                    </form>
+
+                    <div class="add-row">
+                        <label for="new-platform">إضافة تطبيق جديد:</label>
+                        <input type="text" id="new-platform" placeholder="اسم التطبيق أو المنصة">
+                        <button type="button" id="btn-add-platform" class="qbtn">＋ إضافة</button>
+                    </div>
+                    <div class="chips" id="platform-chips"></div>
+
+                    <div class="tbl-wrap" style="margin-top:16px">
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th><th>التطبيق</th><th>طريقة الدفع</th><th>ليالٍ</th>
+                                    <th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th>ملاحظة</th><th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-head" style="margin:20px 0 12px">
+                        <h3>📊 الأرباح حسب التطبيق</h3>
+                    </div>
+                    <div class="tbl-wrap">
+                        <table class="tbl">
+                            <thead>
+                                <tr><th>التطبيق</th><th>حجوزات</th><th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th>نسبة العمولة</th></tr>
+                            </thead>
+                            <tbody id="platform-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="note">
+                        💡 العمولة تُدخل يدوياً لكل حجز كما خصمتها المنصة فعلياً، والصافي = الإجمالي − العمولة.
+                    </div>
+                </section>
+
+                <!-- الجدول الزمني -->
+                <section class="card span-4" id="sec-schedule">
+                    <div class="card-head">
+                        <h3>🗓️ الجدول الشهري</h3>
+                        <span class="dots">⋯</span>
+                    </div>
+                    <div class="timeline" id="timeline-body"></div>
+                    <button type="button" class="view-all" id="btn-view-all">عرض كل الأشهر</button>
+                </section>
+
+                <!-- المصاريف التشغيلية -->
+                <section class="card span-6" id="sec-opex">
+                    <div class="card-head">
+                        <div>
+                            <h3>🧹 المصاريف التشغيلية</h3>
+                            <span class="sub">للمتابعة فقط — لا تدخل في الدين</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="fld">
+                            <label>النظافة — أول شهرين</label>
+                            <input type="number" id="in-clean-first" value="450" min="0" step="any">
+                        </div>
+                        <div class="fld">
+                            <label>النظافة — بقية الأشهر</label>
+                            <input type="number" id="in-clean-rest" value="500" min="0" step="any">
+                        </div>
+                        <div class="fld">
+                            <label>الكهرباء (شهرياً)</label>
+                            <input type="number" id="in-power" value="130" min="0" step="any">
+                        </div>
+                        <div class="fld">
+                            <label>الإنترنت (حصتي)</label>
+                            <input type="number" id="in-internet" value="70" min="0" step="any">
+                        </div>
+                        <div class="fld">
+                            <label>عدد الأشهر</label>
+                            <input type="number" id="in-months" value="12" min="1" max="24" step="1">
+                        </div>
+                    </div>
+
+                    <div class="calc-list">
+                        <div class="calc-line"><span>إجمالي النظافة</span><b id="out-clean-total">—</b></div>
+                        <div class="calc-line"><span>إجمالي الكهرباء</span><b id="out-power-total">—</b></div>
+                        <div class="calc-line"><span>إجمالي الإنترنت</span><b id="out-internet-total">—</b></div>
+                        <div class="calc-line"><span>متوسط التشغيل الشهري</span><b id="out-opex-monthly">—</b></div>
+                        <div class="calc-line total"><span>إجمالي المصاريف التشغيلية</span><b id="out-opex-total">—</b></div>
+                    </div>
+
+                    <div class="tbl-wrap" style="margin-top:16px">
+                        <table class="tbl">
+                            <thead>
+                                <tr><th>الشهر</th><th>الإيجار</th><th>نظافة</th><th>كهرباء</th><th>إنترنت</th><th>الإجمالي</th></tr>
+                            </thead>
+                            <tbody id="months-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- حاسبة العمولة -->
+                <section class="card span-6" id="sec-calc">
+                    <div class="card-head">
+                        <div>
+                            <h3>✦ حاسبة العمولة التقديرية</h3>
+                            <span class="sub">لتقدير حجز قبل حصوله</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="fld">
+                            <label>سعر الليلة المعلن</label>
+                            <input type="number" id="in-night-price" value="294" min="0" step="any">
+                        </div>
+                        <div class="fld">
+                            <label>عدد الليالي</label>
+                            <input type="number" id="in-nights" value="1" min="1" step="1">
+                        </div>
+                        <div class="fld">
+                            <label>الحد الأقصى للعمولة</label>
+                            <input type="number" id="in-fee-cap" value="50" min="0" step="any">
+                        </div>
+                    </div>
+
+                    <div class="calc-list">
+                        <div class="calc-line"><span>عمولة المنصة لليلة</span><b id="out-fee-night">—</b></div>
+                        <div class="calc-line"><span>صافي الليلة</span><b id="out-net-night">—</b></div>
+                        <div class="calc-line"><span>إجمالي العمولة</span><b id="out-fee-total">—</b></div>
+                        <div class="calc-line"><span>صافي بعد خصم التشغيل</span><b id="out-net-after-opex">—</b></div>
+                        <div class="calc-line"><span>ليالٍ لسداد المتبقي</span><b id="out-nights-needed">—</b></div>
+                        <div class="calc-line"><span>أشهر بإشغال 60%</span><b id="out-months-needed">—</b></div>
+                        <div class="calc-line total"><span>صافي الدخل التقديري</span><b id="out-net-total">—</b></div>
+                    </div>
+
+                    <div class="note">
+                        النموذج مبني على أمثلتك الفعلية: 269 ← 33 ريال، و139 ← 24 ريال.
+                        المعادلة ≈ 14.4 + 6.9% من سعر الليلة، بحد أقصى 50 ريال.
+                    </div>
+                </section>
+
             </div>
-
-            <div class="progress-wrap">
-                <div class="progress-track"><div class="progress-fill" id="debt-progress"></div></div>
-                <div class="progress-label" id="debt-progress-label">—</div>
-            </div>
-
-            <div class="content-grid">
-                <div>
-
-                    <!-- Debt basis -->
-                    <div class="card-section">
-                        <h3 class="card-title">🧮 أساس الدين (الإيجار فقط)</h3>
-                        <div class="input-grid">
-                            <div class="form-group">
-                                <label>قيمة العقد لمدة سنة (ريال)</label>
-                                <input type="number" id="in-contract" class="form-control" value="37000" min="0" step="any">
-                            </div>
-                            <div class="form-group">
-                                <label>المبلغ الذي دفعته الوالدة (أول 6 أشهر)</label>
-                                <input type="number" id="in-paid-by-mom" class="form-control" value="18500" min="0" step="any">
-                            </div>
-                        </div>
-                        <div class="calc-summary">
-                            <div class="calc-row"><span>الإيجار الشهري (العقد ÷ 12):</span><span id="out-monthly-rent">—</span></div>
-                            <div class="calc-row"><span>نصف السنة حسب العقد (6 أشهر):</span><span id="out-half-contract">—</span></div>
-                            <div class="calc-row"><span>الفرق بين ما دفعته الوالدة ونصف العقد:</span><span id="out-diff">—</span></div>
-                            <div class="calc-row total"><span>إجمالي الدين للوالدة:</span><span id="out-debt-total">—</span></div>
-                        </div>
-                        <p class="note-line">
-                            💡 الدين = ما دفعته الوالدة فعلياً عن الإيجار. لا تُضاف مصاريف تشغيلية ولا تُخصم أرباح.
-                        </p>
-                    </div>
-
-                    <!-- Payments log -->
-                    <div class="card-section">
-                        <h3 class="card-title">💵 سجل الدفعات للوالدة</h3>
-                        <form id="payment-form" class="input-grid payment-form">
-                            <div class="form-group">
-                                <label>التاريخ</label>
-                                <input type="date" id="pay-date" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label>المبلغ (ريال)</label>
-                                <input type="number" id="pay-amount" class="form-control" min="0" step="any" placeholder="مثال: 2000" required>
-                            </div>
-                            <div class="form-group">
-                                <label>ملاحظة (اختياري)</label>
-                                <input type="text" id="pay-note" class="form-control" placeholder="تحويل بنكي / نقداً">
-                            </div>
-                            <div class="form-group form-group-btn">
-                                <button type="submit" class="btn-primary-full">➕ إضافة دفعة</button>
-                            </div>
-                        </form>
-
-                        <div class="table-wrap">
-                            <table class="data-table" id="payments-table">
-                                <thead>
-                                    <tr><th>التاريخ</th><th>المبلغ</th><th>ملاحظة</th><th>المتبقي بعدها</th><th></th></tr>
-                                </thead>
-                                <tbody id="payments-body"></tbody>
-                            </table>
-                        </div>
-                        <p class="note-line">💾 الدفعات محفوظة محلياً في هذا المتصفح فقط (localStorage).</p>
-                    </div>
-
-                    <!-- Bookings log -->
-                    <div class="card-section">
-                        <h3 class="card-title">📒 سجل الحجوزات والأرباح</h3>
-
-                        <div class="kpi-inline">
-                            <div class="kpi-inline-box">
-                                <span class="kpi-inline-label">إجمالي الدخل</span>
-                                <span class="kpi-inline-val" id="bk-gross">—</span>
-                            </div>
-                            <div class="kpi-inline-box">
-                                <span class="kpi-inline-label">إجمالي العمولات</span>
-                                <span class="kpi-inline-val danger" id="bk-fees">—</span>
-                            </div>
-                            <div class="kpi-inline-box">
-                                <span class="kpi-inline-label">صافي الأرباح</span>
-                                <span class="kpi-inline-val success" id="bk-net">—</span>
-                            </div>
-                            <div class="kpi-inline-box">
-                                <span class="kpi-inline-label">عدد الحجوزات / الليالي</span>
-                                <span class="kpi-inline-val" id="bk-count">—</span>
-                            </div>
-                        </div>
-
-                        <form id="booking-form" class="input-grid">
-                            <div class="form-group">
-                                <label>تاريخ الحجز</label>
-                                <input type="date" id="bk-date" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label>التطبيق / المنصة</label>
-                                <select id="bk-platform" class="form-control" required></select>
-                            </div>
-                            <div class="form-group">
-                                <label>طريقة الدفع</label>
-                                <select id="bk-method" class="form-control" required>
-                                    <option value="عبر المنصة">عبر المنصة</option>
-                                    <option value="تحويل بنكي">تحويل بنكي</option>
-                                    <option value="نقداً">نقداً</option>
-                                    <option value="شبكة / مدى">شبكة / مدى</option>
-                                    <option value="Apple Pay">Apple Pay</option>
-                                    <option value="محفظة إلكترونية">محفظة إلكترونية</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>عدد الليالي</label>
-                                <input type="number" id="bk-nights" class="form-control" min="1" step="1" value="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label>المبلغ الإجمالي (ريال)</label>
-                                <input type="number" id="bk-amount" class="form-control" min="0" step="any" placeholder="مثال: 588" required>
-                            </div>
-                            <div class="form-group">
-                                <label>العمولة المخصومة (ريال)</label>
-                                <input type="number" id="bk-fee" class="form-control" min="0" step="any" placeholder="مثال: 66" required>
-                            </div>
-                            <div class="form-group">
-                                <label>ملاحظة (اختياري)</label>
-                                <input type="text" id="bk-note" class="form-control" placeholder="اسم الضيف / رقم الحجز">
-                            </div>
-                            <div class="form-group form-group-btn">
-                                <button type="submit" class="btn-primary-full">➕ إضافة حجز</button>
-                            </div>
-                        </form>
-
-                        <div class="add-platform">
-                            <label for="new-platform">إضافة تطبيق جديد مستقبلاً:</label>
-                            <input type="text" id="new-platform" class="form-control" placeholder="اسم التطبيق أو المنصة">
-                            <button type="button" id="btn-add-platform" class="btn-ghost">➕ إضافة</button>
-                        </div>
-                        <div id="platform-chips" class="platform-chips"></div>
-
-                        <div class="table-wrap" style="margin-top: 16px;">
-                            <table class="data-table" id="bookings-table">
-                                <thead>
-                                    <tr>
-                                        <th>التاريخ</th><th>التطبيق</th><th>طريقة الدفع</th><th>ليالٍ</th>
-                                        <th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th>ملاحظة</th><th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="bookings-body"></tbody>
-                            </table>
-                        </div>
-
-                        <h4 class="widget-subtitle" style="margin-top: 20px;">📊 الأرباح حسب التطبيق</h4>
-                        <div class="table-wrap">
-                            <table class="data-table" id="platform-table">
-                                <thead>
-                                    <tr><th>التطبيق</th><th>حجوزات</th><th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th>نسبة العمولة</th></tr>
-                                </thead>
-                                <tbody id="platform-body"></tbody>
-                            </table>
-                        </div>
-
-                        <p class="note-line">
-                            💡 العمولة تُدخل يدوياً لكل حجز كما خصمتها المنصة فعلياً، والصافي = الإجمالي − العمولة.
-                            الحجوزات محفوظة محلياً في هذا المتصفح.
-                        </p>
-                    </div>
-
-                    <!-- Operating expenses -->
-                    <div class="card-section">
-                        <h3 class="card-title">🧹 المصاريف التشغيلية (للمتابعة فقط)</h3>
-                        <div class="input-grid">
-                            <div class="form-group">
-                                <label>النظافة — أول شهرين (شهرياً)</label>
-                                <input type="number" id="in-clean-first" class="form-control" value="450" min="0" step="any">
-                            </div>
-                            <div class="form-group">
-                                <label>النظافة — بقية الأشهر (شهرياً)</label>
-                                <input type="number" id="in-clean-rest" class="form-control" value="500" min="0" step="any">
-                            </div>
-                            <div class="form-group">
-                                <label>الكهرباء (متوسط شهري)</label>
-                                <input type="number" id="in-power" class="form-control" value="130" min="0" step="any">
-                            </div>
-                            <div class="form-group">
-                                <label>الإنترنت (حصتي شهرياً — مقسوم مع شخص)</label>
-                                <input type="number" id="in-internet" class="form-control" value="70" min="0" step="any">
-                            </div>
-                            <div class="form-group">
-                                <label>عدد الأشهر المحسوبة</label>
-                                <input type="number" id="in-months" class="form-control" value="12" min="1" max="24" step="1">
-                            </div>
-                        </div>
-                        <div class="calc-summary">
-                            <div class="calc-row"><span>إجمالي النظافة:</span><span id="out-clean-total">—</span></div>
-                            <div class="calc-row"><span>إجمالي الكهرباء:</span><span id="out-power-total">—</span></div>
-                            <div class="calc-row"><span>إجمالي الإنترنت:</span><span id="out-internet-total">—</span></div>
-                            <div class="calc-row"><span>متوسط التشغيل الشهري:</span><span id="out-opex-monthly">—</span></div>
-                            <div class="calc-row total"><span>إجمالي المصاريف التشغيلية:</span><span id="out-opex-total">—</span></div>
-                        </div>
-                        <p class="note-line">
-                            📌 النظافة: أول شهرين بسعر مختلف عن بقية الأشهر. الإنترنت مقسوم مع شخص آخر (المبلغ أعلاه هو حصتي أنا).
-                        </p>
-                    </div>
-
-                    <!-- Monthly breakdown -->
-                    <div class="card-section">
-                        <h3 class="card-title">📅 الجدول الشهري التفصيلي</h3>
-                        <div class="table-wrap">
-                            <table class="data-table" id="months-table">
-                                <thead>
-                                    <tr><th>الشهر</th><th>الإيجار</th><th>نظافة</th><th>كهرباء</th><th>إنترنت</th><th>إجمالي التكلفة</th></tr>
-                                </thead>
-                                <tbody id="months-body"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- Right column -->
-                <div>
-                    <div class="booking-widget sticky-widget">
-                        <div class="price-header">
-                            <span class="price-val" id="side-remaining">—</span>
-                            <span class="price-unit">المتبقي للوالدة (ريال)</span>
-                        </div>
-
-                        <div class="calculator-form">
-                            <h4 class="widget-subtitle">🏨 صافي الليلة بعد عمولة المنصة</h4>
-
-                            <div class="form-group">
-                                <label>سعر الليلة المعلن (ريال)</label>
-                                <input type="number" id="in-night-price" class="form-control" value="294" min="0" step="any">
-                            </div>
-
-                            <div class="form-group">
-                                <label>عدد الليالي المحجوزة</label>
-                                <input type="number" id="in-nights" class="form-control" value="1" min="1" step="1">
-                            </div>
-
-                            <div class="calc-summary">
-                                <div class="calc-row"><span>عمولة المنصة لليلة:</span><span id="out-fee-night">—</span></div>
-                                <div class="calc-row"><span>صافي الليلة:</span><span id="out-net-night">—</span></div>
-                                <div class="calc-row"><span>إجمالي العمولة:</span><span id="out-fee-total">—</span></div>
-                                <div class="calc-row total"><span>صافي الدخل:</span><span id="out-net-total">—</span></div>
-                            </div>
-
-                            <div class="calc-summary" style="margin-top: 10px;">
-                                <div class="calc-row"><span>صافي بعد خصم التشغيل اليومي:</span><span id="out-net-after-opex">—</span></div>
-                                <div class="calc-row"><span>ليالٍ مطلوبة لسداد المتبقي:</span><span id="out-nights-needed">—</span></div>
-                                <div class="calc-row"><span>أشهر تقريبية بإشغال 60%:</span><span id="out-months-needed">—</span></div>
-                            </div>
-
-                            <div class="fee-model">
-                                <b>نموذج العمولة</b>
-                                <span>تقدير مبني على أمثلتك: 269 ← 33 ريال، 139 ← 24 ريال. المعادلة ≈ 14.4 + 6.9% من سعر الليلة، وبحد أقصى 50 ريال.</span>
-                            </div>
-
-                            <div class="form-group" style="margin-top: 10px;">
-                                <label>الحد الأقصى للعمولة (ريال)</label>
-                                <input type="number" id="in-fee-cap" class="form-control" value="50" min="0" step="any">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
-
-        <footer class="site-footer">
-            <div class="footer-content">
-                <div class="footer-brand">لوحة تحصيل الدين</div>
-                <p>مالك العقار: محمد إبراهيم الربيش • صفحة خاصة محمية بكلمة سر</p>
-                <p style="margin-top: 15px; font-size: 11px; opacity: 0.7;">جميع الحقوق محفوظة © 2026</p>
-            </div>
-        </footer>
+    </div>
     </div>
 
     <script src="assets/js/debt.js"></script>
