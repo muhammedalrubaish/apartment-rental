@@ -83,49 +83,75 @@ const FURNITURE = {
             box(0.45, 0.45, 0.4, MAT.wood, bx + bw / 2 + 0.32, 0.26, bz - bl / 2 + 0.25),
             box(0.16, 0.3, 0.16, MAT.gold, bx + bw / 2 + 0.32, 0.62, bz - bl / 2 + 0.25),
         ];
+        // الدولاب مقابل السرير على الجدار الجنوبي، وبعيداً عن باب الدخول (الغربي)
         if (R.w > 3.2) {
-            out.push(box(0.55, 1.6, Math.min(1.5, R.d * 0.45), MAT.woodLight,
-                R.x0 + 0.35, 0.82, R.z0 + R.d - 0.9));
+            const wl = Math.min(1.9, R.w * 0.44);
+            out.push(
+                box(wl, 1.95, 0.58, MAT.woodLight, R.x0 + R.w - wl / 2 - 0.35, 1.0, R.z0 + R.d - 0.35),
+                box(0.04, 1.7, 0.03, MAT.dark, R.x0 + R.w - wl - 0.28, 1.0, R.z0 + R.d - 0.64),
+            );
         }
         return out;
     },
 
     living(R) {
-        const sw = Math.min(2.3, R.w * 0.55);
+        // التلفزيون على الجدار الشمالي، والكنب على الجدار الغربي المجاور له (يسار الشاشة)
+        const sofaLen = Math.min(2.4, R.d * 0.78);
+        const sofaZ = R.z0 + R.d / 2 + 0.15;
+        const sofaX = R.x0 + 0.62;
+        const tvX = R.mx + 0.35;
+
         return [
-            box(sw, 0.45, 0.9, MAT.fabric, R.mx, 0.28, R.z0 + R.d - 1.1),
-            box(sw, 0.55, 0.25, MAT.fabric, R.mx, 0.52, R.z0 + R.d - 0.72),
-            box(0.25, 0.5, 0.9, MAT.fabric, R.mx - sw / 2, 0.5, R.z0 + R.d - 1.1),
-            box(0.25, 0.5, 0.9, MAT.fabric, R.mx + sw / 2, 0.5, R.z0 + R.d - 1.1),
-            box(sw * 1.3, 0.02, R.d * 0.5, MAT.rug, R.mx, 0.05, R.z0 + R.d * 0.6),
-            box(sw * 0.5, 0.12, 0.6, MAT.wood, R.mx, 0.4, R.z0 + R.d - 2.15),
-            box(0.1, 0.34, 0.1, MAT.dark, R.mx - sw * 0.2, 0.19, R.z0 + R.d - 2.15),
-            box(0.1, 0.34, 0.1, MAT.dark, R.mx + sw * 0.2, 0.19, R.z0 + R.d - 2.15),
-            box(sw * 0.65, 0.45, 0.35, MAT.wood, R.mx, 0.26, R.z0 + 0.5),
-            box(sw * 0.6, 0.8, 0.05, MAT.dark, R.mx, 0.92, R.z0 + 0.44),
-            box(0.12, 0.5, 0.12, MAT.green, R.x0 + R.w - 0.5, 0.3, R.z0 + 0.6),
-            box(0.5, 0.55, 0.5, MAT.green, R.x0 + R.w - 0.5, 0.8, R.z0 + 0.6),
+            // الكنب ملاصق للجدار الغربي، ممتد بمحور العمق
+            box(0.25, 0.62, sofaLen, MAT.fabric, R.x0 + 0.16, 0.55, sofaZ),          // الظهر
+            box(0.92, 0.42, sofaLen, MAT.fabric, sofaX, 0.26, sofaZ),                 // المقعد
+            box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ - sofaLen / 2),        // مسند جانبي
+            box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ + sofaLen / 2),        // مسند جانبي
+            box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ - sofaLen * 0.26),
+            box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ + sofaLen * 0.26),
+
+            // طاولة القهوة أمام الكنب
+            box(0.62, 0.1, 1.05, MAT.wood, sofaX + 0.95, 0.42, sofaZ),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 0.72, 0.2, sofaZ - 0.4),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 1.18, 0.2, sofaZ - 0.4),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 0.72, 0.2, sofaZ + 0.4),
+            box(0.09, 0.36, 0.09, MAT.gold, sofaX + 1.18, 0.2, sofaZ + 0.4),
+
+            // سجادة
+            box(R.w * 0.62, 0.02, R.d * 0.6, MAT.rug, R.mx, 0.05, sofaZ),
+
+            // طاولة التلفزيون والشاشة على الجدار الشمالي
+            box(1.35, 0.42, 0.34, MAT.wood, tvX, 0.24, R.z0 + 0.3),
+            box(1.25, 0.72, 0.05, MAT.dark, tvX, 0.88, R.z0 + 0.22),
+
+            // نبتة زينة في الركن
+            box(0.11, 0.42, 0.11, MAT.green, R.x0 + R.w - 0.42, 0.26, R.z0 + R.d - 0.45),
+            box(0.44, 0.48, 0.44, MAT.green, R.x0 + R.w - 0.42, 0.72, R.z0 + R.d - 0.45),
         ];
     },
 
     kitchen(R) {
-        const cabW = Math.max(1.2, R.w - 0.4);
+        // الكف يستند إلى الجدار الشمالي أو الجنوبي حسب facing
+        const north = R.facing === 'north';
+        const backZ = north ? R.z0 + 0.32 : R.z0 + R.d - 0.32;     // مركز الخزائن السفلية
+        const upZ = north ? R.z0 + 0.19 : R.z0 + R.d - 0.19;       // الخزائن العلوية
+        const inward = north ? 1 : -1;                              // اتجاه داخل الغرفة
+        const cabW = Math.max(1.2, R.w - 0.5);
+
         const out = [
-            box(cabW, 0.85, 0.6, MAT.woodLight, R.mx, 0.45, R.z0 + R.d - 0.35),
-            box(cabW, 0.06, 0.62, MAT.dark, R.mx, 0.9, R.z0 + R.d - 0.35),
-            box(cabW * 0.85, 0.55, 0.35, MAT.white, R.mx, 1.75, R.z0 + R.d - 0.22),
-            box(0.5, 0.05, 0.4, MAT.steel, R.mx - cabW * 0.26, 0.93, R.z0 + R.d - 0.35),
-            box(0.55, 0.06, 0.45, MAT.dark, R.mx + cabW * 0.26, 0.94, R.z0 + R.d - 0.35),
-            box(0.62, 1.75, 0.6, MAT.steel, R.x0 + 0.42, 0.88, R.z0 + 0.45),
-            box(0.6, 0.7, 0.55, MAT.dark, R.x0 + R.w - 0.45, 0.35, R.z0 + 0.45),
+            box(cabW, 0.85, 0.6, MAT.white, R.mx, 0.45, backZ),                       // خزائن سفلية
+            box(cabW, 0.06, 0.62, MAT.dark, R.mx, 0.9, backZ),                        // سطح جرانيت
+            box(cabW * 0.86, 0.5, 0.34, MAT.white, R.mx, 1.42, upZ),                  // خزائن علوية
+            box(0.5, 0.05, 0.4, MAT.steel, R.mx - cabW * 0.28, 0.93, backZ),          // المغسلة
+            box(0.06, 0.3, 0.06, MAT.steel, R.mx - cabW * 0.28, 1.08, backZ - inward * 0.2),
+            box(0.42, 0.07, 0.32, MAT.dark, R.mx + cabW * 0.05, 0.95, backZ),         // سخانة كهربائية
+            box(0.5, 0.3, 0.36, MAT.white, R.mx + cabW * 0.3, 1.06, backZ),           // ميكروويف
+            box(0.58, 0.85, 0.58, MAT.white, R.x0 + 0.42, 0.43, backZ),               // ثلاجة صغيرة
+            box(0.34, 0.02, 0.24, MAT.white, R.x0 + 0.42, 0.87, backZ),               // صينية الضيافة
+            box(0.1, 0.22, 0.1, MAT.steel, R.x0 + 0.42, 0.99, backZ - inward * 0.06), // الغلاية
+            box(R.w * 0.5, 0.02, 0.8, MAT.rug, R.mx, 0.05, backZ + inward * 1.05),    // سجادة
         ];
-        if (R.w > 2.4) {
-            out.push(
-                box(0.9, 0.08, 0.65, MAT.woodLight, R.mx, 0.78, R.z0 + R.d * 0.42),
-                box(0.09, 0.74, 0.09, MAT.dark, R.mx - 0.35, 0.39, R.z0 + R.d * 0.42),
-                box(0.09, 0.74, 0.09, MAT.dark, R.mx + 0.35, 0.39, R.z0 + R.d * 0.42),
-            );
-        }
+
         return out;
     },
 
@@ -178,11 +204,13 @@ function buildApartment(scene, plan) {
 
     /* الأرضيات */
     scene.add(box(W + 0.6, 0.2, D + 0.6, MAT.slab, 0, -0.1, 0));
-    rooms.forEach((r) => {
+    rooms.forEach((r, i) => {
         const m = MAT[FLOOR_MAT[r.type] || 'floorWood'];
-        // توسيع بسيط للغرف المدموجة حتى لا تظهر فجوة أرضية عند الجدار المحذوف
+        // توسيع بسيط للغرف المدموجة حتى لا تظهر فجوة أرضية عند الجدار المحذوف،
+        // مع إزاحة رأسية ضئيلة تمنع تداخل الأسطح المتطابقة (z-fighting)
         const pad = r.group ? 0.3 : 0;
-        scene.add(box(r.w + pad, 0.04, r.d + pad, m, cx(r.x + r.w / 2), 0.02, cz(r.z + r.d / 2)));
+        scene.add(box(r.w + pad, 0.04, r.d + pad, m,
+            cx(r.x + r.w / 2), 0.02 + i * 0.002, cz(r.z + r.d / 2)));
     });
 
     /* الكتل الصماء (مجاري خدمات، خزائن مبنية) */
@@ -315,6 +343,7 @@ function buildApartment(scene, plan) {
         const R = {
             x0: cx(r.x), z0: cz(r.z), w: r.w, d: r.d,
             mx: cx(r.x + r.w / 2), mz: cz(r.z + r.d / 2),
+            facing: r.facing || 'south',
         };
         (FURNITURE[r.type] || (() => []))(R).forEach((m) => g.add(m));
 
