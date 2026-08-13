@@ -79,7 +79,7 @@ function initLock() {
             sessionStorage.setItem(SESSION_KEY, '1');
             unlock();
         } else {
-            error.textContent = '❌ كلمة السر غير صحيحة، حاول مرة أخرى.';
+            error.textContent = '⛔ رمز الدخول غير صحيح — تعذّر فتح الملف.';
             input.value = '';
             input.focus();
         }

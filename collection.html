@@ -8,7 +8,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -17,15 +17,55 @@
     <!-- Password Gate -->
     <div id="lock-screen" class="lock-screen">
         <div class="lock-box">
-            <div class="lock-icon">🔐</div>
+
+            <div class="lock-classification">سري • للمالك حصراً</div>
+
+            <div class="lock-emblem">
+                <svg viewBox="0 0 120 120" role="img" aria-label="ميزان العدالة">
+                    <circle cx="60" cy="60" r="56" class="em-ring"></circle>
+                    <circle cx="60" cy="60" r="50" class="em-ring-thin"></circle>
+                    <!-- العمود والقاعدة -->
+                    <path d="M60 32 V88" class="em-line"></path>
+                    <path d="M46 96 h28 l-6 -8 h-16 Z" class="em-fill"></path>
+                    <path d="M40 99 h40" class="em-line"></path>
+                    <!-- الذراع -->
+                    <path d="M24 40 H96" class="em-line"></path>
+                    <circle cx="60" cy="30" r="4" class="em-fill"></circle>
+                    <!-- الكفة اليمنى -->
+                    <path d="M24 40 L12 52 M24 40 L36 52" class="em-line-thin"></path>
+                    <path d="M12 52 Q24 70 36 52 Z" class="em-pan"></path>
+                    <!-- الكفة اليسرى -->
+                    <path d="M96 40 L84 52 M96 40 L108 52" class="em-line-thin"></path>
+                    <path d="M84 52 Q96 70 108 52 Z" class="em-pan"></path>
+                </svg>
+            </div>
+
+            <div class="lock-rule"><span>◆</span></div>
+
             <h1>حاسبة تحصيل الدين</h1>
-            <p>هذه الصفحة خاصة بالمالك فقط. أدخل كلمة السر للاطلاع على تفاصيل التحصيل.</p>
+            <div class="lock-subtitle">سجل المطالبة والتسوية المالية</div>
+
+            <p>هذه الوثيقة خاصة بالمالك حصراً.<br>يُرجى إدخال رمز الدخول للاطلاع على تفاصيل التحصيل.</p>
+
             <form id="lock-form" autocomplete="off">
-                <input type="password" id="lock-input" class="form-control" placeholder="كلمة السر" autocomplete="current-password">
-                <button type="submit" class="btn-primary-full">دخول</button>
+                <div class="lock-field">
+                    <span class="lock-field-icon">🔑</span>
+                    <input type="password" id="lock-input" class="form-control" placeholder="رمز الدخول" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-lock-enter">
+                    <span>فتح الملف</span>
+                </button>
             </form>
+
             <div id="lock-error" class="lock-error"></div>
-            <a href="index.html" class="lock-back">← العودة لصفحة الشقة</a>
+
+            <div class="lock-footer">
+                <div class="lock-seal">
+                    <span class="seal-line">ملف رقم</span>
+                    <span class="seal-num">RHSA-7905</span>
+                </div>
+                <a href="index.html" class="lock-back">← العودة لصفحة الشقة</a>
+            </div>
         </div>
     </div>
 
