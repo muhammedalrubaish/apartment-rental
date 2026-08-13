@@ -150,6 +150,105 @@
                         <p class="note-line">💾 الدفعات محفوظة محلياً في هذا المتصفح فقط (localStorage).</p>
                     </div>
 
+                    <!-- Bookings log -->
+                    <div class="card-section">
+                        <h3 class="card-title">📒 سجل الحجوزات والأرباح</h3>
+
+                        <div class="kpi-inline">
+                            <div class="kpi-inline-box">
+                                <span class="kpi-inline-label">إجمالي الدخل</span>
+                                <span class="kpi-inline-val" id="bk-gross">—</span>
+                            </div>
+                            <div class="kpi-inline-box">
+                                <span class="kpi-inline-label">إجمالي العمولات</span>
+                                <span class="kpi-inline-val danger" id="bk-fees">—</span>
+                            </div>
+                            <div class="kpi-inline-box">
+                                <span class="kpi-inline-label">صافي الأرباح</span>
+                                <span class="kpi-inline-val success" id="bk-net">—</span>
+                            </div>
+                            <div class="kpi-inline-box">
+                                <span class="kpi-inline-label">عدد الحجوزات / الليالي</span>
+                                <span class="kpi-inline-val" id="bk-count">—</span>
+                            </div>
+                        </div>
+
+                        <form id="booking-form" class="input-grid">
+                            <div class="form-group">
+                                <label>تاريخ الحجز</label>
+                                <input type="date" id="bk-date" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>التطبيق / المنصة</label>
+                                <select id="bk-platform" class="form-control" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>طريقة الدفع</label>
+                                <select id="bk-method" class="form-control" required>
+                                    <option value="عبر المنصة">عبر المنصة</option>
+                                    <option value="تحويل بنكي">تحويل بنكي</option>
+                                    <option value="نقداً">نقداً</option>
+                                    <option value="شبكة / مدى">شبكة / مدى</option>
+                                    <option value="Apple Pay">Apple Pay</option>
+                                    <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>عدد الليالي</label>
+                                <input type="number" id="bk-nights" class="form-control" min="1" step="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>المبلغ الإجمالي (ريال)</label>
+                                <input type="number" id="bk-amount" class="form-control" min="0" step="any" placeholder="مثال: 588" required>
+                            </div>
+                            <div class="form-group">
+                                <label>العمولة المخصومة (ريال)</label>
+                                <input type="number" id="bk-fee" class="form-control" min="0" step="any" placeholder="مثال: 66" required>
+                            </div>
+                            <div class="form-group">
+                                <label>ملاحظة (اختياري)</label>
+                                <input type="text" id="bk-note" class="form-control" placeholder="اسم الضيف / رقم الحجز">
+                            </div>
+                            <div class="form-group form-group-btn">
+                                <button type="submit" class="btn-primary-full">➕ إضافة حجز</button>
+                            </div>
+                        </form>
+
+                        <div class="add-platform">
+                            <label for="new-platform">إضافة تطبيق جديد مستقبلاً:</label>
+                            <input type="text" id="new-platform" class="form-control" placeholder="اسم التطبيق أو المنصة">
+                            <button type="button" id="btn-add-platform" class="btn-ghost">➕ إضافة</button>
+                        </div>
+                        <div id="platform-chips" class="platform-chips"></div>
+
+                        <div class="table-wrap" style="margin-top: 16px;">
+                            <table class="data-table" id="bookings-table">
+                                <thead>
+                                    <tr>
+                                        <th>التاريخ</th><th>التطبيق</th><th>طريقة الدفع</th><th>ليالٍ</th>
+                                        <th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th>ملاحظة</th><th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookings-body"></tbody>
+                            </table>
+                        </div>
+
+                        <h4 class="widget-subtitle" style="margin-top: 20px;">📊 الأرباح حسب التطبيق</h4>
+                        <div class="table-wrap">
+                            <table class="data-table" id="platform-table">
+                                <thead>
+                                    <tr><th>التطبيق</th><th>حجوزات</th><th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th>نسبة العمولة</th></tr>
+                                </thead>
+                                <tbody id="platform-body"></tbody>
+                            </table>
+                        </div>
+
+                        <p class="note-line">
+                            💡 العمولة تُدخل يدوياً لكل حجز كما خصمتها المنصة فعلياً، والصافي = الإجمالي − العمولة.
+                            الحجوزات محفوظة محلياً في هذا المتصفح.
+                        </p>
+                    </div>
+
                     <!-- Operating expenses -->
                     <div class="card-section">
                         <h3 class="card-title">🧹 المصاريف التشغيلية (للمتابعة فقط)</h3>
