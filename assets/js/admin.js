@@ -10,6 +10,55 @@
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
     /* ---------------------------------------------------------------------
+       0. بوابة الدخول
+       ملاحظة: هذه حماية من طرف المتصفح فقط (الموقع ثابت بلا خادم).
+       تكفي لإخفاء اللوحة عن الزوار، ولا تصلح لحماية بيانات بالغة الحساسية.
+       --------------------------------------------------------------------- */
+    const PASS_HASH = '0f806819494dd83bc2efe425e67ad5c5c9105e073c04dc72a889fc82747526f1';
+    const UNLOCK_KEY = 'rhsa_admin_unlocked';
+
+    async function sha256(text) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+        return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function unlock() {
+        const lock = document.getElementById('lock');
+        const app = document.getElementById('app');
+        if (lock) lock.remove();
+        if (app) app.hidden = false;
+        start();
+    }
+
+    function initGate() {
+        const form = document.getElementById('lock-form');
+        const input = document.getElementById('lock-pass');
+        const err = document.getElementById('lock-err');
+
+        if (!form) return unlock();                       // لا توجد بوابة
+        if (sessionStorage.getItem(UNLOCK_KEY) === '1') return unlock();
+
+        input.focus();
+        let tries = 0;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const hash = await sha256(input.value.trim());
+
+            if (hash === PASS_HASH) {
+                sessionStorage.setItem(UNLOCK_KEY, '1');
+                unlock();
+                return;
+            }
+
+            tries++;
+            err.textContent = tries >= 3 ? 'رمز غير صحيح — تأكد من الرمز' : 'رمز غير صحيح';
+            input.value = '';
+            input.focus();
+        });
+    }
+
+    /* ---------------------------------------------------------------------
        1. أدوات مساعدة
        --------------------------------------------------------------------- */
     const uid = () => Math.random().toString(36).slice(2, 10);
@@ -1623,8 +1672,8 @@
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', start);
+        document.addEventListener('DOMContentLoaded', initGate);
     } else {
-        start();
+        initGate();
     }
 })();

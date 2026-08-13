@@ -21,7 +21,32 @@
 </head>
 <body>
 
-<div class="app">
+<!-- ================= شاشة القفل ================= -->
+<div class="lock" id="lock">
+    <div class="lock-card">
+        <div class="lock-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/>
+                <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+                <circle cx="12" cy="15.6" r="1.4"/>
+                <path d="M12 17v1.6"/>
+            </svg>
+        </div>
+
+        <h1>لوحة تحكم المالك</h1>
+        <p>هذه الصفحة خاصة بالمالك.<br>أدخل رمز الدخول للمتابعة.</p>
+
+        <form class="lock-form" id="lock-form" autocomplete="off">
+            <input type="password" id="lock-pass" placeholder="رمز الدخول" inputmode="numeric" autocomplete="current-password">
+            <button type="submit">دخول</button>
+        </form>
+
+        <div class="lock-err" id="lock-err"></div>
+        <a href="index.html" class="lock-back">← العودة لصفحة الشقة</a>
+    </div>
+</div>
+
+<div class="app" id="app" hidden>
 
     <!-- ================= الشريط الجانبي (يمين في RTL) ================= -->
     <aside class="rail">

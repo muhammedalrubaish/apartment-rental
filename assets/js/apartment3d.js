@@ -32,23 +32,23 @@ const mat = (color, opts = {}) =>
     new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0.05, ...opts });
 
 const MAT = {
-    floorWood: mat(0xc9a06a),
-    floorTile: mat(0xe2e8f0, { roughness: 0.35 }),
+    floorWood: mat(0xf1efec, { roughness: 0.18, metalness: 0.05 }),   // رخام أبيض كما في الصور
+    floorTile: mat(0xf4f3f1, { roughness: 0.16, metalness: 0.05 }),
     floorBath: mat(0xd7e3ee, { roughness: 0.3 }),
-    wall: mat(0xfbfaf6),
-    wallIn: mat(0xeee5d8),
-    wood: mat(0x8b5e3c),
-    woodLight: mat(0xd9b98c),
-    fabric: mat(0x5a7d9a),
-    fabricWarm: mat(0xd9c3a5),
+    wall: mat(0xdcd5cb),        // جدران بلون بيج دافئ
+    wallIn: mat(0xd3ccc2),
+    wood: mat(0x9a7d5f),
+    woodLight: mat(0xc9ad8b),
+    fabric: mat(0x76786f),      // كنب رمادي
+    fabricWarm: mat(0xe8e6df),  // وسائد فاتحة
     white: mat(0xfafafa),
     dark: mat(0x2b3440, { roughness: 0.4 }),
     steel: mat(0xc0c8d0, { roughness: 0.25, metalness: 0.7 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x9ecbe8, transparent: true, opacity: 0.32, roughness: 0.1 }),
     screenOff: mat(0x0d1117, { roughness: 0.25, metalness: 0.3 }),
-    gold: mat(0xd4a437, { roughness: 0.3, metalness: 0.6 }),
+    gold: mat(0xc9a227, { roughness: 0.25, metalness: 0.75 }),
     slab: mat(0xb9c2cc),
-    rug: mat(0x8fa5b8),
+    rug: mat(0xbdb2a2),         // سجادة بيج منسوجة
 };
 
 const FLOOR_MAT = {
@@ -80,8 +80,11 @@ const FURNITURE = {
             box(bw * 0.32, 0.14, 0.34, MAT.white, bx - bw * 0.21, 0.66, bz - bl / 2 + 0.3),
             box(bw * 0.32, 0.14, 0.34, MAT.white, bx + bw * 0.21, 0.66, bz - bl / 2 + 0.3),
             box(bw - 0.1, 0.06, bl * 0.5, MAT.fabricWarm, bx, 0.62, bz + bl * 0.22),
-            box(0.45, 0.45, 0.4, MAT.wood, bx + bw / 2 + 0.32, 0.26, bz - bl / 2 + 0.25),
-            box(0.16, 0.3, 0.16, MAT.gold, bx + bw / 2 + 0.32, 0.62, bz - bl / 2 + 0.25),
+            // كومودينو وأباجورة على جانبَي السرير
+            box(0.45, 0.45, 0.4, MAT.white, bx + bw / 2 + 0.32, 0.26, bz - bl / 2 + 0.25),
+            box(0.18, 0.28, 0.18, MAT.fabricWarm, bx + bw / 2 + 0.32, 0.62, bz - bl / 2 + 0.25),
+            box(0.45, 0.45, 0.4, MAT.white, bx - bw / 2 - 0.32, 0.26, bz - bl / 2 + 0.25),
+            box(0.18, 0.28, 0.18, MAT.fabricWarm, bx - bw / 2 - 0.32, 0.62, bz - bl / 2 + 0.25),
         ];
         // الدولاب مقابل السرير على الجدار الجنوبي، وبعيداً عن باب الدخول (الغربي)
         if (R.w > 3.2) {
@@ -117,7 +120,7 @@ const FURNITURE = {
             box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ - sofaLen * 0.26),
             box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ + sofaLen * 0.26),
 
-            box(0.62, 0.1, 1.05, MAT.wood, sofaX + inward * 0.95, 0.42, sofaZ),               // طاولة القهوة
+            box(0.66, 0.04, 1.1, MAT.glass, sofaX + inward * 0.95, 0.44, sofaZ),              // طاولة قهوة زجاجية
             box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 0.72, 0.2, sofaZ - 0.4),
             box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 1.18, 0.2, sofaZ - 0.4),
             box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 0.72, 0.2, sofaZ + 0.4),
@@ -125,8 +128,17 @@ const FURNITURE = {
 
             box(R.w * 0.62, 0.02, R.d * 0.6, MAT.rug, R.mx, 0.05, sofaZ),                     // سجادة
 
-            box(1.35, 0.42, 0.34, MAT.wood, tvX, 0.24, R.z0 + 0.3),                           // طاولة التلفزيون
+            box(1.35, 0.42, 0.34, MAT.woodLight, tvX, 0.24, R.z0 + 0.3),                      // طاولة التلفزيون
             screen,
+
+            // كرسي مفرد مقابل الكنب
+            box(0.6, 0.42, 0.6, MAT.fabric, sofaX + inward * 1.85, 0.26, sofaZ + 0.35),
+            box(0.6, 0.5, 0.18, MAT.fabric, sofaX + inward * 2.06, 0.55, sofaZ + 0.35),
+            box(0.06, 0.24, 0.06, MAT.dark, sofaX + inward * 1.66, 0.12, sofaZ + 0.13),
+            box(0.06, 0.24, 0.06, MAT.dark, sofaX + inward * 1.66, 0.12, sofaZ + 0.57),
+
+            // لوحة جدارية فوق الكنب
+            box(0.03, 0.42, 1.05, mat(0xa9a196), wallX - inward * 0.05, 0.92, sofaZ),
         ];
     },
 
