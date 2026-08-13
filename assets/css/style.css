@@ -1405,3 +1405,26 @@ body {
     .apt3d-info { max-width: none; inset-inline: 10px; bottom: 10px; }
     .apt3d-chip { font-size: 12px; padding: 7px 12px; }
 }
+
+/* رابط لوحة تحكم المالك في الشريط العلوي */
+.btn-owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    transition: all .2s ease;
+    white-space: nowrap;
+}
+
+.btn-owner:hover { background: #e2e8f0; color: #0f172a; }
+
+@media (max-width: 560px) {
+    .btn-owner { padding: 8px 12px; font-size: 12px; }
+}

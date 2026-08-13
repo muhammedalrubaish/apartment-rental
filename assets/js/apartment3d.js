@@ -174,12 +174,21 @@ function buildApartment(scene, plan) {
     const rooms = plan.rooms || [];
     const openings = plan.openings || [];
     const windows = plan.windows || [];
+    const solids = plan.solids || [];
 
     /* الأرضيات */
     scene.add(box(W + 0.6, 0.2, D + 0.6, MAT.slab, 0, -0.1, 0));
     rooms.forEach((r) => {
         const m = MAT[FLOOR_MAT[r.type] || 'floorWood'];
-        scene.add(box(r.w, 0.04, r.d, m, cx(r.x + r.w / 2), 0.02, cz(r.z + r.d / 2)));
+        // توسيع بسيط للغرف المدموجة حتى لا تظهر فجوة أرضية عند الجدار المحذوف
+        const pad = r.group ? 0.3 : 0;
+        scene.add(box(r.w + pad, 0.04, r.d + pad, m, cx(r.x + r.w / 2), 0.02, cz(r.z + r.d / 2)));
+    });
+
+    /* الكتل الصماء (مجاري خدمات، خزائن مبنية) */
+    solids.forEach((b) => {
+        const h = b.height || wallH;
+        scene.add(box(b.w, h, b.d, MAT.wall, cx(b.x + b.w / 2), h / 2, cz(b.z + b.d / 2)));
     });
 
     /* جمع أضلاع الغرف كقطع جدارية فريدة */
@@ -198,11 +207,40 @@ function buildApartment(scene, plan) {
         addSeg('z', r.x + r.w, r.z, r.z + r.d);
     });
 
-    /* طرح الفتحات (أبواب وممرات) من القطعة الجدارية */
+    /* الغرف التي تحمل نفس group تُدمج: نحذف الجدار المشترك بينها */
+    const merges = [];
+    rooms.forEach((a) => {
+        if (!a.group) return;
+        rooms.forEach((b) => {
+            if (b === a || b.group !== a.group) return;
+            // حافة أفقية مشتركة (a أعلى b أو العكس)
+            const touchX = Math.abs((a.z + a.d) - b.z) < 0.35 || Math.abs(a.z - (b.z + b.d)) < 0.35;
+            if (touchX) {
+                const lo = Math.max(a.x, b.x), hi = Math.min(a.x + a.w, b.x + b.w);
+                if (hi - lo > 0.05) {
+                    merges.push({ axis: 'x', at: a.z + a.d, from: lo, to: hi });
+                    merges.push({ axis: 'x', at: a.z, from: lo, to: hi });
+                }
+            }
+            // حافة رأسية مشتركة
+            const touchZ = Math.abs((a.x + a.w) - b.x) < 0.35 || Math.abs(a.x - (b.x + b.w)) < 0.35;
+            if (touchZ) {
+                const lo = Math.max(a.z, b.z), hi = Math.min(a.z + a.d, b.z + b.d);
+                if (hi - lo > 0.05) {
+                    merges.push({ axis: 'z', at: a.x + a.w, from: lo, to: hi });
+                    merges.push({ axis: 'z', at: a.x, from: lo, to: hi });
+                }
+            }
+        });
+    });
+
+    /* طرح الفتحات (أبواب وممرات وحدود الدمج) من القطعة الجدارية */
+    const cuts = openings.concat(merges);
+
     function subtract(seg) {
         let parts = [{ from: seg.from, to: seg.to }];
-        openings
-            .filter((o) => o.axis === seg.axis && Math.abs(o.at - seg.at) < 0.06)
+        cuts
+            .filter((o) => o.axis === seg.axis && Math.abs(o.at - seg.at) < 0.28)
             .forEach((o) => {
                 const oa = Math.min(o.from, o.to), ob = Math.max(o.from, o.to);
                 const next = [];
@@ -335,17 +373,19 @@ function init(container, plan) {
     const { pickables, rooms, W, D } = buildApartment(scene, plan);
     buildChips(rooms);
 
-    /* الكاميرا تُؤطَّر حسب حجم الشقة */
-    const span = Math.max(W, D);
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 300);
-    const HOME = new THREE.Vector3(span * 0.72, span * 0.8, span * 0.94);
+    /* الكاميرا تُؤطَّر تلقائياً على الحجم الفعلي للشقة */
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+    const radius = Math.hypot(W, D) / 2;
+    const fitDist = (radius / Math.sin((camera.fov * Math.PI / 180) / 2)) * 0.62;
+    const DIR = new THREE.Vector3(0.42, 0.62, 0.66).normalize();
+    const HOME = DIR.clone().multiplyScalar(fitDist);
     camera.position.copy(HOME);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.minDistance = span * 0.45;
-    controls.maxDistance = span * 3;
+    controls.minDistance = radius * 0.35;
+    controls.maxDistance = fitDist * 2.4;
     controls.maxPolarAngle = Math.PI / 2.15;
     controls.target.set(0, 0.6, 0);
 
@@ -426,6 +466,11 @@ function init(container, plan) {
         const h = container.clientHeight || Math.round(w * 0.62);
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
+        // إن كانت اللوحة ضيقة (جوال) ابتعد قليلاً حتى تظهر الشقة كاملة
+        const need = camera.aspect < 1.5 ? Math.min(1.5 / camera.aspect, 1.8) : 1;
+        const wasHome = camera.position.distanceTo(HOME) < 0.01;
+        HOME.copy(DIR).multiplyScalar(fitDist * need);
+        if (wasHome) camera.position.copy(HOME);   // أعد التأطير ما دام العرض لم يُحرَّك
         camera.updateProjectionMatrix();
     }
     resize();
