@@ -63,10 +63,10 @@
                     </h1>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <a href="https://maps.google.com/?q=RHSA7905+7905+Abdul+Hamid+Al+Katib+Sulaimaniyah+Riyadh" target="_blank" style="background: #f0f9ff; border: 1px solid #0284c7; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: #0369a1; text-decoration: none;">
+                    <a href="https://maps.google.com/?q=RHSA7905+7905+Abdul+Hamid+Al+Katib+Sulaimaniyah+Riyadh" target="_blank" style="background: var(--primary-light); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: var(--primary-dark); text-decoration: none;">
                         🗺️ الخريطة والموقع (RHSA7905)
                     </a>
-                    <div style="background: #f0f9ff; border: 1px solid #0284c7; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: #0369a1;">
+                    <div style="background: var(--primary-light); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: var(--primary-dark);">
                         🔒 دخول ذكي (Tuya)
                     </div>
                 </div>
@@ -412,6 +412,16 @@
         💬
     </a>
 
+    <!-- محادثة مباشرة مع المالك -->
+    <button type="button" class="chat-launcher" id="chat-launcher">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a3 3 0 0 1-3 3H8l-5 4V6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3z"/>
+        </svg>
+        محادثة مباشرة
+    </button>
+
+    <aside class="chat-panel" id="visitor-chat" aria-label="محادثة مع المالك"></aside>
+
     <!-- Application JavaScript -->
     <!-- Three.js (مستضاف محلياً) لمجسم الشقة ثلاثي الأبعاد -->
     <script type="importmap">
@@ -422,6 +432,7 @@
     }
     </script>
     <script src="assets/js/app.js"></script>
+    <script src="assets/js/chat.js"></script>
     <script type="module" src="assets/js/apartment3d.js"></script>
 </body>
 </html>
