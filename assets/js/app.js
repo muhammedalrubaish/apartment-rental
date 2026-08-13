@@ -61,3 +61,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initial calculation
     calculateBooking();
 });
+
+/* ============================================================
+   إبقاء عناوين المنصات واسم المضيف في سطر واحد دائماً
+   يُصغّر حجم الخط تدريجياً حتى يتّسع النص كاملاً بدون قص
+   ============================================================ */
+(function () {
+    const TARGETS = [
+        { sel: '.title-card h2', max: 18, min: 9 },
+        { sel: '.host-details h3', max: 16, min: 9 }
+    ];
+
+    function fitOneLine() {
+        TARGETS.forEach(({ sel, max, min }) => {
+            document.querySelectorAll(sel).forEach(el => {
+                let size = max;
+                el.style.fontSize = size + 'px';
+                /* التقليص خطوة نصف بكسل حتى يختفي الفائض */
+                while (el.scrollWidth > el.clientWidth && size > min) {
+                    size -= 0.5;
+                    el.style.fontSize = size + 'px';
+                }
+            });
+        });
+    }
+
+    window.addEventListener('load', fitOneLine);
+    window.addEventListener('resize', fitOneLine);
+    document.addEventListener('DOMContentLoaded', fitOneLine);
+})();
