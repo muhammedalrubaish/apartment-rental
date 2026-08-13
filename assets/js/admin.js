@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const STORE_KEY = 'rhsa_admin_v1';
+    const STORE_KEY = 'rhsa_admin_v2';
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -33,6 +33,32 @@
     }
 
     const CURRENCIES = { SAR: 'ر.س', USD: '$', AED: 'د.إ' };
+
+    /* ثوابت التشغيل — منقولة من لوحة تحصيل الديون (collection.html) */
+    const RATES = {
+        nightly: 294,        // سعر الليلة
+        cleaning: 500,       // النظافة شهرياً
+        power: 130,          // الكهرباء شهرياً
+        internet: 70,        // الإنترنت — حصتي شهرياً
+        feeBase: 14.38,      // ثابت عمولة المنصات
+        feeRate: 0.0692,     // نسبة عمولة المنصات
+        feeCap: 50,          // الحد الأقصى للعمولة عن الليلة
+    };
+
+    /* عمولة المنصة عن الليلة الواحدة (نفس معادلة لوحة التحصيل) */
+    function platformFee(nightPrice) {
+        if (nightPrice <= 0) return 0;
+        return Math.min(RATES.feeBase + RATES.feeRate * nightPrice, RATES.feeCap);
+    }
+
+    /* عمولة حجز كامل */
+    function bookingFee(total, nights) {
+        if (!nights || total <= 0) return 0;
+        return Math.round(platformFee(total / nights) * nights);
+    }
+
+    /* بنود المصاريف المعتمدة */
+    const EXPENSE_CATEGORIES = ['تنظيف', 'كهرباء', 'إنترنت', 'عمولة منصات'];
 
     function money(n) {
         const cur = CURRENCIES[state.settings.currency] || 'ر.س';
@@ -116,14 +142,32 @@
             { id: uid(), propertyId: 'p1', guest: 'صيانة التكييف', phone: '', source: 'block', checkin: M(15), checkout: M(16), total: 0, status: 'blocked', note: 'صيانة دورية' },
         ];
 
-        const expenses = [
-            { id: uid(), propertyId: 'p1', category: 'كهرباء', amount: 420, date: M(-25), dueDate: M(3), status: 'due', note: 'فاتورة شهر التشغيل' },
-            { id: uid(), propertyId: 'p1', category: 'إنترنت', amount: 299, date: M(-20), dueDate: M(6), status: 'due', note: 'اشتراك STC الشهري' },
-            { id: uid(), propertyId: 'p1', category: 'مياه', amount: 85, date: M(-30), dueDate: M(-2), status: 'paid', note: '' },
-            { id: uid(), propertyId: 'p1', category: 'تنظيف', amount: 600, date: M(-18), dueDate: M(-18), status: 'paid', note: '4 زيارات تنظيف' },
-            { id: uid(), propertyId: 'p1', category: 'صيانة', amount: 350, date: M(-40), dueDate: M(-40), status: 'paid', note: 'إصلاح سخان' },
-            { id: uid(), propertyId: 'p1', category: 'عمولة منصات', amount: 275, date: M(-10), dueDate: M(-10), status: 'paid', note: 'عمولة جاذر إن و Airbnb' },
-        ];
+        // المصاريف التشغيلية بالأسعار الفعلية من لوحة تحصيل الديون
+        const expenses = [];
+        const addExp = (cat, amount, dayOffset, status, note, dueOffset) => expenses.push({
+            id: uid(), propertyId: 'p1', category: cat, amount,
+            date: M(dayOffset), dueDate: M(dueOffset === undefined ? dayOffset : dueOffset),
+            status, note: note || '',
+        });
+
+        // المصاريف الشهرية الثابتة — الشهر الحالي والشهران السابقان
+        [0, 1, 2].forEach((back) => {
+            const d = -back * 30;
+            const paid = back > 0 ? 'paid' : 'due';
+            addExp('تنظيف', RATES.cleaning, d - 5, 'paid', 'زيارات تنظيف بعد كل مغادرة');
+            addExp('كهرباء', RATES.power, d - 8, paid, 'فاتورة الكهرباء الشهرية', back === 0 ? 3 : d - 8);
+            addExp('إنترنت', RATES.internet, d - 10, paid, 'حصتي من اشتراك الإنترنت', back === 0 ? 6 : d - 10);
+        });
+
+        // عمولة المنصات — تُحسب من الحجوزات المنتهية بنفس معادلة لوحة التحصيل
+        bookings.filter((b) => b.status === 'completed' && b.source !== 'direct').forEach((b) => {
+            const n = nightsBetween(b.checkin, b.checkout);
+            const fee = bookingFee(b.total, n);
+            if (fee > 0) {
+                addExp('عمولة منصات', fee, 0, 'paid',
+                    `${b.guest} — ${n} ليالٍ عبر ${b.source === 'airbnb' ? 'Airbnb' : 'جاذر إن'}`);
+            }
+        });
 
         const contacts = [
             { id: uid(), name: 'فهد العتيبي', phone: '0533221144', email: '', source: 'direct', createdAt: M(-3), note: 'حجز من الموقع مباشرة' },
@@ -504,9 +548,10 @@
         const cleaningDue = realBookings().filter((b) => b.checkout >= todayISO()).length;
         const items = [
             { icon: '🛏️', label: 'متوسط سعر الليلة', value: money(s.adr), note: 'محسوب من حجوزات الشهر' },
-            { icon: '🧹', label: 'زيارات تنظيف مجدولة', value: cleaningDue, note: 'بعد كل مغادرة' },
-            { icon: '⚡', label: 'استهلاك الكهرباء', value: money(state.expenses.filter((e) => e.category === 'كهرباء').reduce((a, e) => a + Number(e.amount || 0), 0)), note: 'إجمالي الفواتير المسجلة' },
-            { icon: '📶', label: 'اشتراك الإنترنت', value: money(state.expenses.filter((e) => e.category === 'إنترنت').reduce((a, e) => a + Number(e.amount || 0), 0)), note: 'متجدد شهرياً' },
+            { icon: '🧹', label: 'النظافة', value: money(RATES.cleaning), note: `شهرياً • ${cleaningDue} زيارة قادمة` },
+            { icon: '⚡', label: 'الكهرباء', value: money(RATES.power), note: 'ثابت شهرياً' },
+            { icon: '📶', label: 'الإنترنت', value: money(RATES.internet), note: 'حصتي من الاشتراك شهرياً' },
+            { icon: '🧾', label: 'عمولة المنصات', value: money(state.expenses.filter((e) => e.category === 'عمولة منصات').reduce((a, e) => a + Number(e.amount || 0), 0)), note: `${RATES.feeBase} + ${(RATES.feeRate * 100).toFixed(2)}% لكل ليلة (بحد ${RATES.feeCap})` },
             { icon: '🔑', label: 'الوحدات النشطة', value: state.properties.filter((p) => p.status === 'active').length, note: 'من أصل ' + state.properties.length },
             { icon: '👥', label: 'إجمالي الزبائن', value: state.contacts.length, note: 'من الموقع والمنصات' },
         ];
@@ -1164,6 +1209,18 @@
                 pushNotification('booking', 'حجز جديد مؤكد', `${guest} — ${nightsBetween(ci, co)} ليالٍ عبر ${SOURCE_LABEL[source] || source}`);
             }
 
+            // عمولة المنصات تُسجَّل تلقائياً للحجوزات غير المباشرة
+            if (source === 'gathern' || source === 'airbnb') {
+                const fee = bookingFee(booking.total, nightsBetween(ci, co));
+                if (fee > 0) {
+                    state.expenses.push({
+                        id: uid(), propertyId: booking.propertyId, category: 'عمولة منصات',
+                        amount: fee, date: todayISO(), dueDate: todayISO(), status: 'due',
+                        note: `${guest} — ${SOURCE_LABEL[source]}`,
+                    });
+                }
+            }
+
             save();
             closeModal();
             toast('تم حفظ الحجز');
@@ -1196,9 +1253,7 @@
         openModal('إضافة مصروف', `
             <div class="form-row">
                 <div class="field"><label>البند</label><select class="input" id="e-cat">
-                    <option>كهرباء</option><option>إنترنت</option><option>مياه</option>
-                    <option>تنظيف</option><option>صيانة</option><option>عمولة منصات</option>
-                    <option>إيجار</option><option>أخرى</option>
+                    ${EXPENSE_CATEGORIES.map((c) => `<option>${c}</option>`).join('')}
                 </select></div>
                 <div class="field"><label>المبلغ</label><input type="number" class="input" id="e-amt" placeholder="0"></div>
             </div>
@@ -1557,6 +1612,7 @@
        15. الإقلاع
        --------------------------------------------------------------------- */
     function start() {
+        save();            // ثبّت البيانات الأولية عند أول فتح
         applyTheme();
         applyLang();
         bind();
