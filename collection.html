@@ -74,15 +74,15 @@
             </a>
 
             <div class="sb-group-title">الرئيسية</div>
-            <button type="button" class="sb-link active" data-target="sec-overview"><span class="sb-ico">◎</span> نظرة عامة</button>
-            <button type="button" class="sb-link" data-target="sec-debt"><span class="sb-ico">▤</span> أساس الدين</button>
-            <button type="button" class="sb-link" data-target="sec-payments"><span class="sb-ico">↯</span> الدفعات</button>
-            <button type="button" class="sb-link" data-target="sec-bookings"><span class="sb-ico">▦</span> الحجوزات والأرباح</button>
+            <button type="button" class="sb-link active" data-view="home"><span class="sb-ico">◎</span> نظرة عامة</button>
+            <button type="button" class="sb-link" data-view="debt"><span class="sb-ico">▤</span> أساس الدين</button>
+            <button type="button" class="sb-link" data-view="payments"><span class="sb-ico">↯</span> الدفعات</button>
+            <button type="button" class="sb-link" data-view="bookings"><span class="sb-ico">▦</span> الحجوزات والأرباح</button>
 
             <div class="sb-group-title">التحليل</div>
-            <button type="button" class="sb-link" data-target="sec-opex"><span class="sb-ico">◔</span> المصاريف التشغيلية</button>
-            <button type="button" class="sb-link" data-target="sec-schedule"><span class="sb-ico">☰</span> الجدول الشهري</button>
-            <button type="button" class="sb-link" data-target="sec-calc"><span class="sb-ico">✦</span> حاسبة العمولة</button>
+            <button type="button" class="sb-link" data-view="opex"><span class="sb-ico">◔</span> المصاريف التشغيلية</button>
+            <button type="button" class="sb-link" data-view="schedule"><span class="sb-ico">☰</span> الجدول الشهري</button>
+            <button type="button" class="sb-link" data-view="calc"><span class="sb-ico">✦</span> حاسبة العمولة</button>
 
             <div class="sb-group-title">أدوات</div>
             <a href="index.html" class="sb-link"><span class="sb-ico">⌂</span> صفحة الشقة</a>
@@ -111,9 +111,10 @@
                 </div>
             </header>
 
-            <div class="dash-grid">
-
-                <!-- بطاقة الدين + إجراءات سريعة -->
+            <!-- الصفحة الرئيسية -->
+            <div class="view" data-view="home">
+                <div class="dash-grid">
+<!-- بطاقة الدين + إجراءات سريعة -->
                 <section class="card span-4" id="sec-overview">
                     <div class="card-head">
                         <h3>إجراءات سريعة</h3>
@@ -121,9 +122,9 @@
                     </div>
 
                     <div class="quick-row">
-                        <button type="button" class="qbtn primary" data-jump="sec-payments">＋ دفعة</button>
-                        <button type="button" class="qbtn" data-jump="sec-bookings">▦ حجز</button>
-                        <button type="button" class="qbtn" data-jump="sec-schedule">☰ الجدول</button>
+                        <button type="button" class="qbtn primary" data-view="payments">＋ دفعة</button>
+                        <button type="button" class="qbtn" data-view="bookings">▦ حجز</button>
+                        <button type="button" class="qbtn" data-view="schedule">☰ الجدول</button>
                     </div>
 
                     <div class="debt-card">
@@ -143,8 +144,7 @@
                     <div class="bar-note" id="debt-progress-label">—</div>
                 </section>
 
-                <!-- ملخص الدين -->
-                <section class="card span-4">
+<section class="card span-4">
                     <div class="card-head">
                         <div>
                             <h3>ملخص المطالبة</h3>
@@ -180,8 +180,7 @@
                     </div>
                 </section>
 
-                <!-- توزيع المصاريف + الرسم -->
-                <section class="card span-4">
+<section class="card span-4">
                     <div class="card-head">
                         <div>
                             <h3>توزيع التشغيل</h3>
@@ -232,8 +231,87 @@
                     <div class="chart-note" id="trend-note">—</div>
                 </section>
 
-                <!-- أساس الدين -->
-                <section class="card span-6" id="sec-debt">
+                <section class="span-12">
+                    <div class="card-head" style="margin-bottom:12px">
+                        <h3>الأقسام</h3>
+                        <span class="sub">اضغط على البطاقة لفتح صفحتها</span>
+                    </div>
+                    <div class="tile-grid">
+                        <button type="button" class="tile" data-view="debt">
+                            <span class="tile-ico">▤</span>
+                            <span class="tile-body">
+                                <b>أساس الدين</b>
+                                <span>العقد والمبلغ المدفوع</span>
+                            </span>
+                            <span class="tile-stat " id="tile-debt">—</span>
+                            <span class="tile-go">←</span>
+                        </button>
+
+                        <button type="button" class="tile" data-view="payments">
+                            <span class="tile-ico">↯</span>
+                            <span class="tile-body">
+                                <b>سجل الدفعات</b>
+                                <span id="tile-pay-sub">—</span>
+                            </span>
+                            <span class="tile-stat green" id="tile-pay">—</span>
+                            <span class="tile-go">←</span>
+                        </button>
+
+                        <button type="button" class="tile" data-view="bookings">
+                            <span class="tile-ico">▦</span>
+                            <span class="tile-body">
+                                <b>الحجوزات والأرباح</b>
+                                <span id="tile-bk-sub">—</span>
+                            </span>
+                            <span class="tile-stat green" id="tile-bk">—</span>
+                            <span class="tile-go">←</span>
+                        </button>
+
+                        <button type="button" class="tile" data-view="opex">
+                            <span class="tile-ico">◔</span>
+                            <span class="tile-body">
+                                <b>المصاريف التشغيلية</b>
+                                <span>نظافة • كهرباء • إنترنت</span>
+                            </span>
+                            <span class="tile-stat yellow" id="tile-opex">—</span>
+                            <span class="tile-go">←</span>
+                        </button>
+
+                        <button type="button" class="tile" data-view="schedule">
+                            <span class="tile-ico">☰</span>
+                            <span class="tile-body">
+                                <b>الجدول الشهري</b>
+                                <span id="tile-sch-sub">—</span>
+                            </span>
+                            <span class="tile-stat " id="tile-sch">—</span>
+                            <span class="tile-go">←</span>
+                        </button>
+
+                        <button type="button" class="tile" data-view="calc">
+                            <span class="tile-ico">✦</span>
+                            <span class="tile-body">
+                                <b>حاسبة العمولة</b>
+                                <span>تقدير حجز قبل حصوله</span>
+                            </span>
+                            <span class="tile-stat " id="tile-calc">—</span>
+                            <span class="tile-go">←</span>
+                        </button>
+                    </div>
+                </section>
+                </div>
+            </div>
+
+            <div class="view" data-view="debt" hidden>
+                <div class="view-head">
+                    <button type="button" class="back-btn" data-back>→ رجوع</button>
+                    <div class="view-titles">
+                        <h2>أساس الدين</h2>
+                        <span>الإيجار فقط — بدون أرباح</span>
+                    </div>
+                </div>
+                <div class="dash-grid">
+<!-- أساس الدين -->
+                <section class="card span-12" id="sec-debt">
                     <div class="card-head">
                         <h3>🧮 أساس الدين</h3>
                         <span class="dots">⋯</span>
@@ -257,9 +335,20 @@
                         <div class="calc-line total"><span>إجمالي الدين للوالدة</span><b id="out-debt-total">—</b></div>
                     </div>
                 </section>
+                </div>
+            </div>
 
-                <!-- الدفعات -->
-                <section class="card span-6" id="sec-payments">
+            <div class="view" data-view="payments" hidden>
+                <div class="view-head">
+                    <button type="button" class="back-btn" data-back>→ رجوع</button>
+                    <div class="view-titles">
+                        <h2>سجل الدفعات</h2>
+                        <span>ما سُدِّد للوالدة حتى الآن</span>
+                    </div>
+                </div>
+                <div class="dash-grid">
+<!-- الدفعات -->
+                <section class="card span-12" id="sec-payments">
                     <div class="card-head">
                         <h3>💵 سجل الدفعات</h3>
                         <span class="chip" id="pay-count-chip">—</span>
@@ -292,9 +381,20 @@
                         </table>
                     </div>
                 </section>
+                </div>
+            </div>
 
-                <!-- الحجوزات -->
-                <section class="card span-8" id="sec-bookings">
+            <div class="view" data-view="bookings" hidden>
+                <div class="view-head">
+                    <button type="button" class="back-btn" data-back>→ رجوع</button>
+                    <div class="view-titles">
+                        <h2>الحجوزات والأرباح</h2>
+                        <span>الصافي بعد العمولة الفعلية</span>
+                    </div>
+                </div>
+                <div class="dash-grid">
+<!-- الحجوزات -->
+                <section class="card span-12" id="sec-bookings">
                     <div class="card-head">
                         <div>
                             <h3>📒 سجل الحجوزات والأرباح</h3>
@@ -401,19 +501,20 @@
                         💡 العمولة تُدخل يدوياً لكل حجز كما خصمتها المنصة فعلياً، والصافي = الإجمالي − العمولة.
                     </div>
                 </section>
+                </div>
+            </div>
 
-                <!-- الجدول الزمني -->
-                <section class="card span-4" id="sec-schedule">
-                    <div class="card-head">
-                        <h3>🗓️ الجدول الشهري</h3>
-                        <span class="dots">⋯</span>
+            <div class="view" data-view="opex" hidden>
+                <div class="view-head">
+                    <button type="button" class="back-btn" data-back>→ رجوع</button>
+                    <div class="view-titles">
+                        <h2>المصاريف التشغيلية</h2>
+                        <span>للمتابعة فقط — لا تدخل في الدين</span>
                     </div>
-                    <div class="timeline" id="timeline-body"></div>
-                    <button type="button" class="view-all" id="btn-view-all">عرض كل الأشهر</button>
-                </section>
-
-                <!-- المصاريف التشغيلية -->
-                <section class="card span-6" id="sec-opex">
+                </div>
+                <div class="dash-grid">
+<!-- المصاريف التشغيلية -->
+                <section class="card span-12" id="sec-opex">
                     <div class="card-head">
                         <div>
                             <h3>🧹 المصاريف التشغيلية</h3>
@@ -461,9 +562,41 @@
                         </table>
                     </div>
                 </section>
+                </div>
+            </div>
 
-                <!-- حاسبة العمولة -->
-                <section class="card span-6" id="sec-calc">
+            <div class="view" data-view="schedule" hidden>
+                <div class="view-head">
+                    <button type="button" class="back-btn" data-back>→ رجوع</button>
+                    <div class="view-titles">
+                        <h2>الجدول الشهري</h2>
+                        <span>تفصيل تكلفة كل شهر</span>
+                    </div>
+                </div>
+                <div class="dash-grid">
+<!-- الجدول الزمني -->
+                <section class="card span-12" id="sec-schedule">
+                    <div class="card-head">
+                        <h3>🗓️ الجدول الشهري</h3>
+                        <span class="dots">⋯</span>
+                    </div>
+                    <div class="timeline" id="timeline-body"></div>
+                    <button type="button" class="view-all" id="btn-view-all">عرض كل الأشهر</button>
+                </section>
+                </div>
+            </div>
+
+            <div class="view" data-view="calc" hidden>
+                <div class="view-head">
+                    <button type="button" class="back-btn" data-back>→ رجوع</button>
+                    <div class="view-titles">
+                        <h2>حاسبة العمولة التقديرية</h2>
+                        <span>قبل حصول الحجز</span>
+                    </div>
+                </div>
+                <div class="dash-grid">
+<!-- حاسبة العمولة -->
+                <section class="card span-12" id="sec-calc">
                     <div class="card-head">
                         <div>
                             <h3>✦ حاسبة العمولة التقديرية</h3>
@@ -501,7 +634,7 @@
                         المعادلة ≈ 14.4 + 6.9% من سعر الليلة، بحد أقصى 50 ريال.
                     </div>
                 </section>
-
+                </div>
             </div>
         </div>
     </div>

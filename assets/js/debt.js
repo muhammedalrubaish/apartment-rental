@@ -252,6 +252,8 @@ function renderBookings() {
     setText('bk-fees', sar(fees));
     setText('bk-net', sar(gross - fees));
     setText('bk-count', `${list.length} حجز / ${nights} ليلة`);
+    setText('tile-bk', sar(gross - fees));
+    setText('tile-bk-sub', list.length ? `${list.length} حجز • ${nights} ليلة` : 'لا توجد حجوزات بعد');
 
     renderPlatformBars(byPlatform);
 
@@ -501,6 +503,7 @@ function recalc() {
 
     /* الدفعات */
     const paid = renderPayments(debtTotal);
+    const paidSoFar = paid;
     const remaining = Math.max(debtTotal - paid, 0);
 
     setText('kpi-contract', sar(contract));
@@ -510,7 +513,11 @@ function recalc() {
     setText('sb-remaining', sar(remaining));
     const dcEl = document.getElementById('dc-remaining');
     if (dcEl) dcEl.innerHTML = `${fmt(remaining)} <small>ريال</small>`;
-    setText('pay-count-chip', `${loadPayments().length} دفعة`);
+    const payCount = loadPayments().length;
+    setText('pay-count-chip', `${payCount} دفعة`);
+    setText('tile-pay', sar(paidSoFar));
+    setText('tile-pay-sub', payCount ? `${payCount} دفعة مسجلة` : 'لا توجد دفعات بعد');
+    setText('tile-debt', sar(debtTotal));
 
     const pct = debtTotal > 0 ? Math.min((paid / debtTotal) * 100, 100) : 0;
     const bar = document.getElementById('debt-progress');
@@ -555,6 +562,9 @@ function recalc() {
     setText('lg-net', fmt(internetTotal));
     setText('lg-monthly', fmt(opexMonthly));
     renderTimeline(months, monthlyRent, cleanFirst, cleanRest, power, internet);
+    setText('tile-opex', sar(opexTotal));
+    setText('tile-sch', sar(monthlyRent + opexMonthly));
+    setText('tile-sch-sub', `${months} شهراً • متوسط التكلفة`);
 
     /* الجدول الشهري */
     const mBody = document.getElementById('months-body');
@@ -598,6 +608,7 @@ function recalc() {
     setText('out-net-night', sar(netNight));
     setText('out-fee-total', sar(feeTotal));
     setText('out-net-total', sar(netTotal));
+    setText('tile-calc', sar(netNight));
 
     const opexDaily = opexMonthly / 30;
     const netAfterOpexNight = netNight - opexDaily;
@@ -620,6 +631,45 @@ function recalc() {
         setText('kpi-nights', `${nightsNeeded} ليلة`);
         setText('dc-nights', `${nightsNeeded} ليلة للسداد`);
     }
+}
+
+/* ---------- التنقل بين الصفحات ---------- */
+
+const VIEW_TITLES = {
+    home: ['لوحة تحصيل الدين', 'شقة السليمانية • RHSA7905'],
+    debt: ['أساس الدين', 'الإيجار فقط — بدون أرباح'],
+    payments: ['سجل الدفعات', 'ما سُدِّد للوالدة حتى الآن'],
+    bookings: ['الحجوزات والأرباح', 'الصافي بعد العمولة الفعلية'],
+    opex: ['المصاريف التشغيلية', 'للمتابعة فقط'],
+    schedule: ['الجدول الشهري', 'تفصيل تكلفة كل شهر'],
+    calc: ['حاسبة العمولة', 'تقدير حجز قبل حصوله']
+};
+
+function showView(name, fromHash) {
+    const views = document.querySelectorAll('.view');
+    const exists = Array.from(views).some(v => v.dataset.view === name);
+    if (!exists) name = 'home';
+
+    views.forEach(v => { v.hidden = v.dataset.view !== name; });
+
+    document.querySelectorAll('.sb-link[data-view]').forEach(l => {
+        l.classList.toggle('active', l.dataset.view === name);
+    });
+
+    const t = VIEW_TITLES[name];
+    if (t) {
+        const title = document.querySelector('.tb-title');
+        if (title) title.innerHTML = `${t[0]}<span>${t[1]}</span>`;
+    }
+
+    if (!fromHash) location.hash = name;
+
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sb-overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('show');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ---------- التهيئة ---------- */
@@ -717,7 +767,7 @@ function initApp() {
     setText('today-chip', '📅 ' + today.toLocaleDateString('ar-SA-u-ca-gregory',
         { weekday: 'long', day: 'numeric', month: 'long' }));
 
-    /* التنقل من السايدبار */
+    /* التنقل بين صفحات اللوحة */
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sb-overlay');
 
@@ -733,24 +783,22 @@ function initApp() {
 
     overlay.addEventListener('click', closeSidebar);
 
-    const goTo = (id) => {
-        const target = document.getElementById(id);
-        if (!target) return;
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        closeSidebar();
-    };
-
-    document.querySelectorAll('.sb-link[data-target]').forEach(link => {
-        link.addEventListener('click', () => {
-            document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-            goTo(link.dataset.target);
-        });
+    document.querySelectorAll('[data-view]').forEach(el => {
+        /* الصفحات نفسها ليست أزرار تنقل */
+        if (el.classList.contains('view')) return;
+        el.addEventListener('click', () => showView(el.dataset.view));
     });
 
-    document.querySelectorAll('[data-jump]').forEach(btn => {
-        btn.addEventListener('click', () => goTo(btn.dataset.jump));
+    document.querySelectorAll('[data-back]').forEach(btn => {
+        btn.addEventListener('click', () => showView('home'));
     });
+
+    /* دعم زر الرجوع في المتصفح */
+    window.addEventListener('hashchange', () => {
+        showView((location.hash || '#home').slice(1), true);
+    });
+
+    showView((location.hash || '#home').slice(1), true);
 
     /* توسيع الجدول الزمني */
     document.getElementById('btn-view-all').addEventListener('click', () => {
