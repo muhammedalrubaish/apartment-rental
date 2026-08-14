@@ -48,13 +48,91 @@ const MAT = {
     screenOff: mat(0x0d1117, { roughness: 0.25, metalness: 0.3 }),
     gold: mat(0xc9a227, { roughness: 0.25, metalness: 0.75 }),
     slab: mat(0xb9c2cc),
-    rug: mat(0xbdb2a2),         // سجادة بيج منسوجة
+    rug: new THREE.MeshStandardMaterial({ map: makeRugTexture(), roughness: 0.95, metalness: 0 }),
+    cushion: new THREE.MeshStandardMaterial({ map: makeCushionTexture(), roughness: 0.85, metalness: 0 }),
 };
 
 const FLOOR_MAT = {
     bedroom: 'floorWood', living: 'floorWood', hall: 'floorWood',
     kitchen: 'floorTile', bath: 'floorBath',
 };
+
+/* ── نُسج مزخرفة تُرسم على canvas: سجاد منقوش ووسائد مربّعات ───────── */
+function makeCanvasTexture(w, h, paint) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    paint(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    return t;
+}
+
+/* سجادة منسوجة بزخارف هندسية — مستوحاة من سجاد الشقة في الصور */
+function makeRugTexture() {
+    return makeCanvasTexture(512, 384, (g, W, H) => {
+        g.fillStyle = '#cdc1ac';
+        g.fillRect(0, 0, W, H);
+
+        // نسيج خشن خفيف
+        for (let i = 0; i < 5200; i++) {
+            g.fillStyle = i % 2 ? 'rgba(255,255,255,0.05)' : 'rgba(120,105,85,0.06)';
+            g.fillRect(Math.random() * W, Math.random() * H, 2, 1);
+        }
+
+        // إطارات متداخلة
+        [[16, '#a8977c'], [30, '#bcae95'], [44, '#8f8068']].forEach(([p, col]) => {
+            g.strokeStyle = col;
+            g.lineWidth = 6;
+            g.strokeRect(p, p, W - p * 2, H - p * 2);
+        });
+
+        // معينات في الوسط
+        const midY = H / 2;
+        const step = 74;
+        for (let x = step; x < W - 40; x += step) {
+            g.beginPath();
+            g.moveTo(x, midY - 34);
+            g.lineTo(x + 30, midY);
+            g.lineTo(x, midY + 34);
+            g.lineTo(x - 30, midY);
+            g.closePath();
+            g.fillStyle = '#8f8068';
+            g.fill();
+
+            g.beginPath();
+            g.moveTo(x, midY - 16);
+            g.lineTo(x + 14, midY);
+            g.lineTo(x, midY + 16);
+            g.lineTo(x - 14, midY);
+            g.closePath();
+            g.fillStyle = '#e2d9c6';
+            g.fill();
+        }
+
+        // أشرطة أفقية علوية وسفلية
+        [72, H - 78].forEach((y) => {
+            g.fillStyle = '#a8977c';
+            g.fillRect(56, y, W - 112, 10);
+            g.fillStyle = '#e2d9c6';
+            for (let x = 62; x < W - 60; x += 26) g.fillRect(x, y + 2, 12, 6);
+        });
+    });
+}
+
+/* قماش وسائد بمربّعات — مطابق لوسائد الصالة في الصور */
+function makeCushionTexture() {
+    return makeCanvasTexture(128, 128, (g, W, H) => {
+        const n = 8, s = W / n;
+        for (let r = 0; r < n; r++) {
+            for (let col = 0; col < n; col++) {
+                g.fillStyle = (r + col) % 2 ? '#f2efe6' : '#3a3a38';
+                g.fillRect(col * s, r * s, s, s);
+            }
+        }
+    });
+}
 
 /* ── شاشة يوتيوب: نسيج يُرسم على canvas ويتحدّث كأن الفيديو يعمل ───── */
 function makeYouTubeScreen() {
@@ -177,6 +255,8 @@ const FURNITURE = {
             box(0.18, 0.28, 0.18, MAT.fabricWarm, bx + bw / 2 + 0.32, 0.62, bz - bl / 2 + 0.25),
             box(0.45, 0.45, 0.4, MAT.white, bx - bw / 2 - 0.32, 0.26, bz - bl / 2 + 0.25),
             box(0.18, 0.28, 0.18, MAT.fabricWarm, bx - bw / 2 - 0.32, 0.62, bz - bl / 2 + 0.25),
+            // سجادة منقوشة أمام السرير
+            box(bw * 1.45, 0.02, Math.min(1.5, R.d * 0.34), MAT.rug, bx, 0.05, bz + bl / 2 + 0.55),
         ];
         // الدولاب مقابل السرير على الجدار الجنوبي، وبعيداً عن باب الدخول (الغربي)
         if (R.w > 3.2) {
@@ -198,7 +278,7 @@ const FURNITURE = {
         const sofaLen = Math.min(2.4, R.d * 0.78);
         const sofaZ = R.z0 + R.d / 2 + 0.15;
         const tvX = R.mx + inward * 0.35;
-        const loveZ = R.z0 + 1.55;   // الكنب الصغير أمام الشاشة مباشرة
+        const loveZ = R.z0 + 2.62;   // الكنب الصغير مُبعد خلف السجادة، ووجهه للشاشة
 
         // شاشة التلفزيون — قابلة للتشغيل بالضغط (تفتح يوتيوب)
         const screen = box(1.25, 0.72, 0.05, MAT.screenOff.clone(), tvX, 0.88, R.z0 + 0.22);
@@ -210,8 +290,8 @@ const FURNITURE = {
             box(0.92, 0.42, sofaLen, MAT.fabric, sofaX, 0.26, sofaZ),                        // المقعد
             box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ - sofaLen / 2),
             box(0.92, 0.5, 0.24, MAT.fabric, sofaX, 0.5, sofaZ + sofaLen / 2),
-            box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ - sofaLen * 0.26),
-            box(0.42, 0.16, 0.42, MAT.fabricWarm, sofaX, 0.55, sofaZ + sofaLen * 0.26),
+            box(0.42, 0.16, 0.42, MAT.cushion, sofaX, 0.55, sofaZ - sofaLen * 0.26),
+            box(0.42, 0.16, 0.42, MAT.cushion, sofaX, 0.55, sofaZ + sofaLen * 0.26),
 
             box(0.66, 0.04, 1.1, MAT.glass, sofaX + inward * 0.95, 0.44, sofaZ),              // طاولة قهوة زجاجية
             box(0.09, 0.36, 0.09, MAT.gold, sofaX + inward * 0.72, 0.2, sofaZ - 0.4),
@@ -229,8 +309,8 @@ const FURNITURE = {
             box(1.45, 0.55, 0.22, MAT.fabric, tvX, 0.50, loveZ + 0.40),                       // الظهر
             box(0.20, 0.46, 0.80, MAT.fabric, tvX - 0.72, 0.46, loveZ),                       // مسند يمين
             box(0.20, 0.46, 0.80, MAT.fabric, tvX + 0.72, 0.46, loveZ),                       // مسند يسار
-            box(0.38, 0.14, 0.30, MAT.fabricWarm, tvX - 0.34, 0.52, loveZ + 0.22),            // وسادة
-            box(0.38, 0.14, 0.30, MAT.fabricWarm, tvX + 0.34, 0.52, loveZ + 0.22),            // وسادة
+            box(0.38, 0.14, 0.30, MAT.cushion, tvX - 0.34, 0.52, loveZ + 0.22),               // وسادة
+            box(0.38, 0.14, 0.30, MAT.cushion, tvX + 0.34, 0.52, loveZ + 0.22),               // وسادة
 
             // كرسي مفرد مقابل الكنب
             box(0.6, 0.42, 0.6, MAT.fabric, sofaX + inward * 1.85, 0.26, sofaZ + 0.35),
