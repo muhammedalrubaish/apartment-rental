@@ -93,14 +93,18 @@
         const client = sb();
         if (!client) throw new Error('no-client');
 
-        const { data, error } = await client
+        // نولّد المعرّف من المتصفح ونمرره صراحةً بدل الاعتماد على RETURNING:
+        // الزائر مجهول لا يملك صلاحية SELECT على الجدول (بحكم سياسات RLS)،
+        // وPostgres يتطلب سياسة SELECT إضافية لأي إدراج يطلب RETURNING،
+        // فتجنّب هذا المسار أبسط وأكثر أماناً من فتح صلاحية قراءة عامة.
+        const id = crypto.randomUUID();
+
+        const { error } = await client
             .from('conversations')
-            .insert({ visitor_name: name, visitor_phone: dbPhone(phone) })
-            .select('id')
-            .single();
+            .insert({ id, visitor_name: name, visitor_phone: dbPhone(phone) });
 
         if (error) throw error;
-        return data.id;
+        return id;
     }
 
     async function sendVisitorMessage(text) {
