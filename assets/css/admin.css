@@ -679,11 +679,11 @@ select.input { cursor: pointer; }
     }
 
     .rail-logo, .rail-spacer, .rail-user { display: none; }
-    .rail-nav { flex-direction: row; gap: 2px; width: 100%; }
-    .rail-btn { flex: 1; min-width: 0; padding: 7px 2px; font-size: 9px; }
+    .rail-nav { flex-direction: row; gap: 2px; width: 100%; flex-wrap: nowrap; }
+    .rail-btn { flex: 1 1 0; min-width: 0; padding: 7px 2px; font-size: 9px; overflow: hidden; }
     .rail-btn span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .rail-btn svg { width: 17px; height: 17px; }
-    .rail-badge { inset-inline-end: 8px; top: 2px; }
+    .rail-badge { inset-inline-end: 4px; top: 2px; }
 
     .main { padding: 10px 10px calc(96px + env(safe-area-inset-bottom, 0px)); }
     body.is-ltr .main { padding: 10px 10px calc(96px + env(safe-area-inset-bottom, 0px)); }
@@ -694,6 +694,13 @@ select.input { cursor: pointer; }
     .form-row { grid-template-columns: 1fr; }
     .cal-day { min-height: 52px; padding: 4px; }
     .toast-zone { inset-inline: 12px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 1300; }
+}
+
+@media (max-width: 480px) {
+    .rail { overflow-x: visible; }
+    .rail-btn { padding: 8px 0; font-size: 0; }
+    .rail-btn span { display: none; }
+    .rail-btn svg { width: 20px; height: 20px; }
 }
 
 /* ---------- 19. الطباعة ---------- */
