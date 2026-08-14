@@ -56,6 +56,98 @@ const FLOOR_MAT = {
     kitchen: 'floorTile', bath: 'floorBath',
 };
 
+/* ── شاشة يوتيوب: نسيج يُرسم على canvas ويتحدّث كأن الفيديو يعمل ───── */
+function makeYouTubeScreen() {
+    const c = document.createElement('canvas');
+    c.width = 640;
+    c.height = 360;
+    const g = c.getContext('2d');
+    const texture = new THREE.CanvasTexture(c);
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    const rounded = (x, y, w, h, r) => {
+        g.beginPath();
+        g.moveTo(x + r, y);
+        g.arcTo(x + w, y, x + w, y + h, r);
+        g.arcTo(x + w, y + h, x, y + h, r);
+        g.arcTo(x, y + h, x, y, r);
+        g.arcTo(x, y, x + w, y, r);
+        g.closePath();
+    };
+
+    /* progress: من 0 إلى 1 */
+    function draw(progress) {
+        const W = c.width, H = c.height;
+
+        // خلفية مشغّل يوتيوب الداكنة
+        g.fillStyle = '#0f0f0f';
+        g.fillRect(0, 0, W, H);
+
+        // إطار الفيديو نفسه بتدرّج خفيف ليبدو كمشهد يعمل
+        const grad = g.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, '#1f2937');
+        grad.addColorStop(0.5, '#374151');
+        grad.addColorStop(1, '#111827');
+        g.fillStyle = grad;
+        g.fillRect(0, 26, W, H - 74);
+
+        // شعار يوتيوب: مستطيل أحمر بمثلث أبيض
+        const bw = 132, bh = 92;
+        const bx = (W - bw) / 2, by = (H - bh) / 2 - 6;
+        g.fillStyle = '#ff0000';
+        rounded(bx, by, bw, bh, 24);
+        g.fill();
+
+        g.fillStyle = '#ffffff';
+        g.beginPath();
+        g.moveTo(bx + bw * 0.40, by + bh * 0.28);
+        g.lineTo(bx + bw * 0.40, by + bh * 0.72);
+        g.lineTo(bx + bw * 0.70, by + bh * 0.50);
+        g.closePath();
+        g.fill();
+
+        // شريط علوي: عنوان وهمي
+        g.fillStyle = '#0f0f0f';
+        g.fillRect(0, 0, W, 26);
+        g.fillStyle = '#ff0000';
+        rounded(12, 7, 26, 12, 4);
+        g.fill();
+        g.fillStyle = '#3f3f3f';
+        rounded(48, 8, 150, 10, 5);
+        g.fill();
+
+        // شريط التقدّم السفلي
+        const barY = H - 34;
+        g.fillStyle = '#0f0f0f';
+        g.fillRect(0, H - 48, W, 48);
+
+        g.fillStyle = 'rgba(255,255,255,0.28)';
+        g.fillRect(20, barY, W - 40, 5);
+
+        const p = Math.max(0, Math.min(1, progress));
+        g.fillStyle = '#ff0000';
+        g.fillRect(20, barY, (W - 40) * p, 5);
+
+        g.beginPath();
+        g.arc(20 + (W - 40) * p, barY + 2.5, 8, 0, Math.PI * 2);
+        g.fill();
+
+        // أزرار تحكم مبسّطة
+        g.fillStyle = '#ffffff';
+        g.beginPath();
+        g.moveTo(22, H - 20);
+        g.lineTo(22, H - 6);
+        g.lineTo(34, H - 13);
+        g.closePath();
+        g.fill();
+
+        texture.needsUpdate = true;
+    }
+
+    draw(0);
+    return { texture, draw };
+}
+
 /* صندوق بأبعاد ومركز محددين */
 function box(w, h, d, material, x, y, z) {
     const m = new THREE.Mesh(
@@ -106,8 +198,9 @@ const FURNITURE = {
         const sofaLen = Math.min(2.4, R.d * 0.78);
         const sofaZ = R.z0 + R.d / 2 + 0.15;
         const tvX = R.mx + inward * 0.35;
+        const loveZ = R.z0 + 1.55;   // الكنب الصغير أمام الشاشة مباشرة
 
-        // شاشة التلفزيون — قابلة للتشغيل بالضغط
+        // شاشة التلفزيون — قابلة للتشغيل بالضغط (تفتح يوتيوب)
         const screen = box(1.25, 0.72, 0.05, MAT.screenOff.clone(), tvX, 0.88, R.z0 + 0.22);
         screen.userData.interactive = 'tv';
         screen.userData.tvAnchor = [tvX, 0.88, R.z0 + 0.5];
@@ -130,6 +223,14 @@ const FURNITURE = {
 
             box(1.35, 0.42, 0.34, MAT.woodLight, tvX, 0.24, R.z0 + 0.3),                      // طاولة التلفزيون
             screen,
+
+            // كنب صغير (مقعدان) مقابل الشاشة تماماً، ظهره للجنوب ووجهه للتلفزيون
+            box(1.45, 0.40, 0.80, MAT.fabric, tvX, 0.25, loveZ),                              // المقعد
+            box(1.45, 0.55, 0.22, MAT.fabric, tvX, 0.50, loveZ + 0.40),                       // الظهر
+            box(0.20, 0.46, 0.80, MAT.fabric, tvX - 0.72, 0.46, loveZ),                       // مسند يمين
+            box(0.20, 0.46, 0.80, MAT.fabric, tvX + 0.72, 0.46, loveZ),                       // مسند يسار
+            box(0.38, 0.14, 0.30, MAT.fabricWarm, tvX - 0.34, 0.52, loveZ + 0.22),            // وسادة
+            box(0.38, 0.14, 0.30, MAT.fabricWarm, tvX + 0.34, 0.52, loveZ + 0.22),            // وسادة
 
             // كرسي مفرد مقابل الكنب
             box(0.6, 0.42, 0.6, MAT.fabric, sofaX + inward * 1.85, 0.26, sofaZ + 0.35),
@@ -168,19 +269,33 @@ const FURNITURE = {
     },
 
     bath(R) {
-        const shw = Math.min(1.1, R.w * 0.45);
-        const shz = R.z0 + R.d - shw / 2 - 0.15;
+        // الباب في الجدار الجنوبي ناحية الشرق، فالترتيب من الغرب إلى الشرق:
+        // المرحاض (غرباً) ← الدش بلا زجاج (بين المرحاض والباب) ← المغسلة (شمالاً شرقاً)
+        const toiletX = R.x0 + 0.40;                  // ملاصق للجدار الغربي
+        const showerX = R.x0 + R.w * 0.52;            // بين المرحاض والباب
+        const showerZ = R.z0 + R.d - 0.75;            // ناحية الباب الجنوبي
+        const basinX = R.x0 + R.w - 0.42;             // شرقاً، مكان المرحاض السابق
+        const basinZ = R.z0 + 0.40;                   // ملاصقة للجدار الشمالي
+
         return [
-            box(shw, 0.02, shw, mat(0xa8c4d8), R.x0 + 0.15 + shw / 2, 0.05, shz),
-            box(0.05, 1.5, shw, MAT.glass, R.x0 + 0.15 + shw, 0.78, shz),
-            box(shw, 1.5, 0.05, MAT.glass, R.x0 + 0.15 + shw / 2, 0.78, shz - shw / 2),
-            box(0.12, 0.1, 0.12, MAT.steel, R.x0 + 0.3, 1.5, shz),
-            box(0.55, 0.12, 0.4, MAT.white, R.x0 + R.w - 0.5, 0.85, R.z0 + R.d - 0.35),
-            box(0.35, 0.75, 0.35, MAT.white, R.x0 + R.w - 0.5, 0.4, R.z0 + R.d - 0.35),
-            box(0.5, 0.6, 0.04, mat(0xdfe9f2, { metalness: 0.6, roughness: 0.15 }),
-                R.x0 + R.w - 0.5, 1.4, R.z0 + R.d - 0.14),
-            box(0.4, 0.42, 0.55, MAT.white, R.x0 + R.w - 0.45, 0.22, R.z0 + 0.6),
-            box(0.4, 0.5, 0.15, MAT.white, R.x0 + R.w - 0.45, 0.5, R.z0 + 0.35),
+            // ── المرحاض: الجهة الغربية (مقابل الدش) ──
+            box(0.40, 0.42, 0.56, MAT.white, toiletX, 0.22, R.z0 + R.d * 0.42),
+            box(0.40, 0.50, 0.16, MAT.white, toiletX, 0.50, R.z0 + R.d * 0.42 - 0.28),
+            box(0.34, 0.05, 0.30, MAT.white, toiletX, 0.45, R.z0 + R.d * 0.42 + 0.10),
+
+            // ── الدش بلا زجاج: صينية أرضية + رأس دش + خلاط على الجدار ──
+            box(0.95, 0.06, 0.95, mat(0xc9d6e2, { roughness: 0.25 }), showerX, 0.03, showerZ),
+            box(0.95, 0.02, 0.95, mat(0xa8c4d8, { roughness: 0.2 }), showerX, 0.07, showerZ),
+            box(0.06, 1.05, 0.06, MAT.steel, showerX, 0.60, showerZ - 0.42),          // عمود الدش
+            box(0.24, 0.05, 0.24, MAT.steel, showerX, 1.16, showerZ - 0.30),          // رأس الدش
+            box(0.14, 0.16, 0.08, MAT.steel, showerX, 0.95, showerZ - 0.44),          // الخلاط
+
+            // ── المغسلة الصغيرة: شمالاً شرقاً مع مرآة على الجدار الشمالي ──
+            box(0.46, 0.11, 0.34, MAT.white, basinX, 0.85, basinZ),
+            box(0.30, 0.74, 0.26, MAT.white, basinX, 0.42, basinZ),
+            box(0.05, 0.16, 0.05, MAT.steel, basinX, 0.99, basinZ - 0.11),            // الحنفية
+            box(0.44, 0.54, 0.03, mat(0xdfe9f2, { metalness: 0.6, roughness: 0.15 }),
+                basinX, 1.36, R.z0 + 0.06),                                            // المرآة
         ];
     },
 
@@ -501,23 +616,54 @@ function init(container, plan) {
         hint(pivot.userData.open ? '🚪 فُتح الباب' : '🚪 أُغلق الباب');
     }
 
-    /* تشغيل/إطفاء التلفزيون */
-    const tvLight = new THREE.PointLight(0x7fc4ff, 0, 3.2, 2);
+    /* تشغيل/إطفاء التلفزيون — يفتح واجهة يوتيوب */
+    const tvLight = new THREE.PointLight(0xdfe9ff, 0, 3.4, 2);
     scene.add(tvLight);
+
+    const yt = makeYouTubeScreen();
+    let tvOnScreen = null;      // الشاشة العاملة حالياً
+    let tvProgress = 0;         // موضع شريط التقدّم
+    let tvRedraw = 0;           // مؤقّت إعادة الرسم
 
     function toggleTv(screen) {
         const on = !screen.userData.on;
         screen.userData.on = on;
         const m = screen.material;
-        m.color.set(on ? 0x14406e : 0x0d1117);
-        m.emissive.set(on ? 0x2f86d6 : 0x000000);
-        m.emissiveIntensity = on ? 1.5 : 0;
+
+        if (on) {
+            tvProgress = 0;
+            yt.draw(0);
+            m.map = yt.texture;
+            m.emissiveMap = yt.texture;
+            m.color.set(0xffffff);
+            m.emissive.set(0xffffff);
+            m.emissiveIntensity = 1.0;
+            tvOnScreen = screen;
+        } else {
+            m.map = null;
+            m.emissiveMap = null;
+            m.color.set(0x0d1117);
+            m.emissive.set(0x000000);
+            m.emissiveIntensity = 0;
+            tvOnScreen = null;
+        }
         m.needsUpdate = true;
 
         const a = screen.userData.tvAnchor;
         if (a) tvLight.position.set(a[0], a[1], a[2]);
         tvLight.intensity = on ? 6 : 0;
-        hint(on ? '📺 التلفزيون يعمل' : '📺 التلفزيون مطفأ');
+        hint(on ? '📺 يوتيوب يعمل الآن' : '📺 التلفزيون مطفأ');
+    }
+
+    /* تقدّم شريط الفيديو — يُستدعى من حلقة الرسم */
+    function updateTv(dt) {
+        if (!tvOnScreen) return;
+        tvProgress = (tvProgress + dt * 0.05) % 1;
+        tvRedraw += dt;
+        if (tvRedraw >= 0.25) {            // إعادة رسم 4 مرات بالثانية تكفي بصرياً
+            tvRedraw = 0;
+            yt.draw(tvProgress);
+        }
     }
 
     /* رسالة قصيرة أسفل اللوحة */
@@ -629,6 +775,7 @@ function init(container, plan) {
             if (a.t >= 1) doorAnims.splice(i, 1);
         }
 
+        updateTv(dt);
         controls.update();
         renderer.render(scene, camera);
     });
