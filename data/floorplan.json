@@ -9,7 +9,8 @@
     "group": "غرف تحمل نفس المجموعة تُدمج بلا جدار بينها (لرسم الغرف بشكل L)",
     "type": "bedroom | living | kitchen | bath | hall",
     "facing": "الجدار الذي يستند إليه الأثاث الرئيسي: north (أعلى) أو south (أسفل)",
-    "sofaSide": "الجدار الذي يستند إليه الكنب في الصالة: east أو west"
+    "sofaSide": "الجدار الذي يستند إليه الكنب في الصالة: east أو west",
+    "lock": "نوع مقبض الباب: smart (بصمة إلكترونية) أو lever (مقبض عادي)"
   },
   "apartment": {
     "name": "شقة السليمانية — RHSA7905",
@@ -80,7 +81,8 @@
       "at": 0.25,
       "from": 3.55,
       "to": 4.45,
-      "kind": "door"
+      "kind": "door",
+      "lock": "smart"
     },
     {
       "_وصف": "باب غرفة النوم",
@@ -88,7 +90,8 @@
       "at": 9.15,
       "from": 3.55,
       "to": 4.55,
-      "kind": "door"
+      "kind": "door",
+      "lock": "lever"
     },
     {
       "_وصف": "باب دورة المياه",
@@ -96,7 +99,8 @@
       "at": 2.96,
       "from": 1.4,
       "to": 2.3,
-      "kind": "door"
+      "kind": "door",
+      "lock": "lever"
     }
   ],
   "windows": [

@@ -48,6 +48,11 @@ const MAT = {
     screenOff: mat(0x0d1117, { roughness: 0.25, metalness: 0.3 }),
     gold: mat(0xc9a227, { roughness: 0.25, metalness: 0.75 }),
     slab: mat(0xb9c2cc),
+    water: new THREE.MeshStandardMaterial({
+        color: 0xbfe4f5, transparent: true, opacity: 0.5,
+        roughness: 0.08, metalness: 0.1,
+        emissive: 0x2b7fa8, emissiveIntensity: 0.25,
+    }),
     rug: new THREE.MeshStandardMaterial({ map: makeRugTexture(), roughness: 0.95, metalness: 0 }),
     cushion: new THREE.MeshStandardMaterial({ map: makeCushionTexture(), roughness: 0.85, metalness: 0 }),
 };
@@ -236,6 +241,41 @@ function box(w, h, d, material, x, y, z) {
     return m;
 }
 
+/* ── نفّاث ماء: قطرات تتساقط داخل مجموعة مخفية حتى الضغط على الحنفية ── */
+function makeWaterJet(spread, height, x, y, z) {
+    const g = new THREE.Group();
+    g.position.set(x, y, z);
+    g.visible = false;
+    g.userData.waterJet = true;
+    g.userData.drops = [];
+
+    const wide = spread > 0.1;
+
+    // الحنفية الضيقة: عمود ماء متصل حتى قاع الحوض ليكون واضحاً
+    if (!wide) {
+        const stream = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.016, 0.013, height, 8), MAT.water);
+        stream.position.y = -height / 2;
+        g.add(stream);
+    }
+
+    const n = wide ? 14 : 7;
+    for (let i = 0; i < n; i++) {
+        const r = spread * (0.25 + Math.random() * 0.75);
+        const a = Math.random() * Math.PI * 2;
+        const d = new THREE.Mesh(
+            new THREE.CylinderGeometry(wide ? 0.008 : 0.012, wide ? 0.006 : 0.009,
+                height * (wide ? 0.22 : 0.3), 6),
+            MAT.water);
+        d.position.set(Math.cos(a) * r, -Math.random() * height, Math.sin(a) * r);
+        d.userData.speed = 1.6 + Math.random() * 1.4;
+        g.add(d);
+        g.userData.drops.push(d);
+    }
+    g.userData.height = height;
+    return g;
+}
+
 /* ── مولّدات الأثاث: كل واحدة تتكيّف مع أبعاد الغرفة ───────────── */
 const FURNITURE = {
     bedroom(R) {
@@ -349,34 +389,54 @@ const FURNITURE = {
     },
 
     bath(R) {
-        // الباب في الجدار الجنوبي ناحية الشرق، فالترتيب من الغرب إلى الشرق:
-        // المرحاض (غرباً) ← الدش بلا زجاج (بين المرحاض والباب) ← المغسلة (شمالاً شرقاً)
-        const toiletX = R.x0 + 0.40;                  // ملاصق للجدار الغربي
-        const showerX = R.x0 + R.w * 0.52;            // بين المرحاض والباب
-        const showerZ = R.z0 + R.d - 0.75;            // ناحية الباب الجنوبي
-        const basinX = R.x0 + R.w - 0.42;             // شرقاً، مكان المرحاض السابق
-        const basinZ = R.z0 + 0.40;                   // ملاصقة للجدار الشمالي
+        // الباب في الجدار الجنوبي ناحية الشرق، لذلك:
+        // الجدار الشمالي: الدش (غرباً) ثم المغسلة (شرقاً) — جنباً إلى جنب.
+        // المرحاض ملاصق تماماً للجدار الغربي.
+        const showerX = R.x0 + 0.56;                  // الجدار الشمالي — غرب المغسلة
+        const showerZ = R.z0 + 0.48;
+        const basinX = R.x0 + R.w - 0.44;             // الجدار الشمالي — شرقاً
+        const basinZ = R.z0 + 0.38;
+        const toiletX = R.x0 + 0.34;                  // ملاصق للجدار الغربي
+        const toiletZ = R.z0 + R.d - 0.92;
 
-        return [
-            // ── المرحاض: الجهة الغربية (مقابل الدش) ──
-            box(0.40, 0.42, 0.56, MAT.white, toiletX, 0.22, R.z0 + R.d * 0.42),
-            box(0.40, 0.50, 0.16, MAT.white, toiletX, 0.50, R.z0 + R.d * 0.42 - 0.28),
-            box(0.34, 0.05, 0.30, MAT.white, toiletX, 0.45, R.z0 + R.d * 0.42 + 0.10),
+        const out = [
+            // ── المرحاض: ظهره على الجدار الغربي تماماً ──
+            box(0.56, 0.42, 0.40, MAT.white, toiletX + 0.10, 0.22, toiletZ),
+            box(0.16, 0.52, 0.40, MAT.white, R.x0 + 0.09, 0.52, toiletZ),   // الخزان على الجدار
+            box(0.32, 0.05, 0.34, MAT.white, toiletX + 0.18, 0.45, toiletZ),
 
-            // ── الدش بلا زجاج: صينية أرضية + رأس دش + خلاط على الجدار ──
-            box(0.95, 0.06, 0.95, mat(0xc9d6e2, { roughness: 0.25 }), showerX, 0.03, showerZ),
-            box(0.95, 0.02, 0.95, mat(0xa8c4d8, { roughness: 0.2 }), showerX, 0.07, showerZ),
-            box(0.06, 1.05, 0.06, MAT.steel, showerX, 0.60, showerZ - 0.42),          // عمود الدش
-            box(0.24, 0.05, 0.24, MAT.steel, showerX, 1.16, showerZ - 0.30),          // رأس الدش
-            box(0.14, 0.16, 0.08, MAT.steel, showerX, 0.95, showerZ - 0.44),          // الخلاط
+            // ── الدش: بلا قاعدة زجاجية — مصرف أرضي فقط ──
+            box(0.16, 0.012, 0.16, MAT.steel, showerX, 0.045, showerZ),      // مصرف الأرضية
+            box(0.06, 1.15, 0.06, MAT.steel, showerX, 0.62, R.z0 + 0.10),    // عمود الدش على الجدار
 
-            // ── المغسلة الصغيرة: شمالاً شرقاً مع مرآة على الجدار الشمالي ──
+            // ── المغسلة الصغيرة مع مرآة على الجدار الشمالي ──
             box(0.46, 0.11, 0.34, MAT.white, basinX, 0.85, basinZ),
             box(0.30, 0.74, 0.26, MAT.white, basinX, 0.42, basinZ),
-            box(0.05, 0.16, 0.05, MAT.steel, basinX, 0.99, basinZ - 0.11),            // الحنفية
             box(0.44, 0.54, 0.03, mat(0xdfe9f2, { metalness: 0.6, roughness: 0.15 }),
-                basinX, 1.36, R.z0 + 0.06),                                            // المرآة
+                basinX, 1.36, R.z0 + 0.06),                                   // المرآة
         ];
+
+        /* عناصر تفاعلية: الضغط عليها يُخرج الماء */
+        const head = box(0.26, 0.06, 0.26, MAT.steel, showerX, 1.22, R.z0 + 0.30);
+        const mixer = box(0.14, 0.16, 0.09, MAT.steel, showerX, 0.98, R.z0 + 0.11);
+        const tap = box(0.05, 0.18, 0.05, MAT.steel, basinX, 1.00, basinZ - 0.12);
+        const spout = box(0.05, 0.04, 0.16, MAT.steel, basinX, 1.07, basinZ - 0.05);
+
+        const showerJet = makeWaterJet(0.22, 1.10, showerX, 1.19, R.z0 + 0.30);
+        const basinJet = makeWaterJet(0.055, 0.20, basinX, 1.05, basinZ - 0.02);
+
+        [head, mixer].forEach((m) => {
+            m.userData.interactive = 'water';
+            m.userData.jet = showerJet;
+            m.userData.label = '🚿 الدش';
+        });
+        [tap, spout, out[5], out[6]].forEach((m) => {
+            m.userData.interactive = 'water';
+            m.userData.jet = basinJet;
+            m.userData.label = '🚰 المغسلة';
+        });
+
+        return out.concat([head, mixer, tap, spout, showerJet, basinJet]);
     },
 
     hall(R) {
@@ -507,6 +567,41 @@ function buildApartment(scene, plan) {
 
     /* الأبواب داخل الفتحات — كل باب مجموعة تدور حول مفصلها عند الضغط */
     const doors = [];
+
+    /* مقابض الأبواب — تُبنى في إطار محلي (u على امتداد الباب، n عمودياً عليه)
+       ثم تُسقط على المحور الصحيح. smart = قفل بصمة إلكتروني، lever = مقبض عادي. */
+    const HANDLE_PANEL = mat(0x23262b, { roughness: 0.35, metalness: 0.55 });
+    const HANDLE_PAD = mat(0x3fa9e0, { roughness: 0.2, metalness: 0.3, emissive: 0x1d6f9c, emissiveIntensity: 0.6 });
+
+    function addHandle(pivot, axis, lock, len, dh) {
+        // put(uSize, ySize, nSize, material, u, y, n)
+        const put = axis === 'x'
+            ? (a, b, c, m, u, y, n) => box(a, b, c, m, u, y, n)
+            : (a, b, c, m, u, y, n) => box(c, b, a, m, n, y, u);
+
+        const u = len * 0.84;
+        const y = dh * 0.55;
+
+        if (lock === 'smart') {
+            // لوحة قفل ذكي عمودية + قارئ بصمة مضيء + مقبض معدني قصير
+            pivot.add(put(0.13, 0.46, 0.035, HANDLE_PANEL, u, y + 0.06, -0.048));
+            pivot.add(put(0.075, 0.075, 0.015, HANDLE_PAD, u, y + 0.16, -0.068));
+            pivot.add(put(0.055, 0.055, 0.012, mat(0x8f98a3, { metalness: 0.7, roughness: 0.3 }),
+                u, y - 0.03, -0.068));
+            pivot.add(put(0.05, 0.16, 0.05, MAT.steel, u, y - 0.16, -0.08));
+            // نفس اللوحة على الوجه الآخر
+            pivot.add(put(0.12, 0.34, 0.03, HANDLE_PANEL, u, y + 0.02, 0.045));
+            pivot.add(put(0.05, 0.16, 0.05, MAT.steel, u, y - 0.16, 0.075));
+        } else {
+            // مقبض عادي: وردة دائرية + ذراع أفقي على الوجهين
+            [-1, 1].forEach((s) => {
+                pivot.add(put(0.09, 0.09, 0.018, MAT.gold, u, y, s * 0.042));
+                pivot.add(put(0.05, 0.05, 0.055, MAT.gold, u, y, s * 0.075));
+                pivot.add(put(0.15, 0.035, 0.035, MAT.gold, u - 0.05, y, s * 0.10));
+            });
+        }
+    }
+
     openings.filter((o) => o.kind === 'door').forEach((o) => {
         const len = Math.abs(o.to - o.from);
         const outer = o.axis === 'x'
@@ -519,16 +614,16 @@ function buildApartment(scene, plan) {
         pivot.userData.interactive = 'door';
         pivot.userData.open = false;
         pivot.userData.swing = o.swing === 'ccw' ? 1 : -1;
+        pivot.userData.lock = o.lock === 'smart' ? 'smart' : 'lever';
 
         if (o.axis === 'x') {
             pivot.position.set(cx(Math.min(o.from, o.to)), 0, cz(o.at));
             pivot.add(box(len * 0.97, dh, 0.06, MAT.wood, len / 2, dh / 2, 0));
-            pivot.add(box(0.08, 0.14, 0.05, MAT.gold, len * 0.86, dh * 0.55, -0.06));
         } else {
             pivot.position.set(cx(o.at), 0, cz(Math.min(o.from, o.to)));
             pivot.add(box(0.06, dh, len * 0.97, MAT.wood, 0, dh / 2, len / 2));
-            pivot.add(box(0.05, 0.14, 0.08, MAT.gold, -0.06, dh * 0.55, len * 0.86));
         }
+        addHandle(pivot, o.axis, pivot.userData.lock, len, dh);
 
         scene.add(pivot);
         doors.push(pivot);
@@ -684,6 +779,7 @@ function init(container, plan) {
 
         if (o.userData.interactive === 'door') return toggleDoor(o);
         if (o.userData.interactive === 'tv') return toggleTv(o);
+        if (o.userData.interactive === 'water') return toggleWater(o);
         if (o.userData.room) selectRoom(o.userData.room);
     });
 
@@ -694,6 +790,30 @@ function init(container, plan) {
         const target = pivot.userData.open ? pivot.userData.swing * Math.PI * 0.52 : 0;
         doorAnims.push({ pivot, from: pivot.rotation.y, to: target, t: 0 });
         hint(pivot.userData.open ? '🚪 فُتح الباب' : '🚪 أُغلق الباب');
+    }
+
+    /* فتح/إغلاق الماء في المغسلة أو الدش */
+    const jets = [];
+    scene.traverse((n) => { if (n.userData && n.userData.waterJet) jets.push(n); });
+
+    function toggleWater(target) {
+        const jet = target.userData.jet;
+        if (!jet) return;
+        jet.visible = !jet.visible;
+        hint(jet.visible
+            ? (target.userData.label || '💧') + ' — الماء يجري'
+            : (target.userData.label || '💧') + ' — أُغلق الماء');
+    }
+
+    function updateWater(dt) {
+        jets.forEach((j) => {
+            if (!j.visible) return;
+            const h = j.userData.height;
+            j.userData.drops.forEach((d) => {
+                d.position.y -= d.userData.speed * dt;
+                if (d.position.y < -h) d.position.y += h;
+            });
+        });
     }
 
     /* تشغيل/إطفاء التلفزيون — يفتح واجهة يوتيوب */
@@ -856,6 +976,7 @@ function init(container, plan) {
         }
 
         updateTv(dt);
+        updateWater(dt);
         controls.update();
         renderer.render(scene, camera);
     });
