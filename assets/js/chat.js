@@ -1,14 +1,17 @@
 /* ==========================================================================
-   محادثة مباشرة مع الزائر
+   محادثة مباشرة مع الزائر — متصلة بقاعدة بيانات Supabase
    - يجب تسجيل الدخول بالاسم الثنائي ورقم الجوال قبل بدء المحادثة
-   - المحادثة تُحفظ في متصفح الزائر، وتُرسل نسخة للمالك عبر واتساب
+   - رسائل الزائر تُخزَّن في قاعدة البيانات وتصل للمالك في لوحة التحكم فوراً
+   - ردود المالك تُسحب بفحص دوري (polling) عبر دالة آمنة (RPC) لأن الزائر
+     مجهول الهوية ولا يملك صلاحية قراءة مباشرة على الجداول (انظر سياسات RLS)
    ========================================================================== */
 (function () {
     'use strict';
 
     const OWNER_WA = '966549814764';
     const OWNER_NAME = 'محمد';
-    const STORE = 'rhsa_visitor_chat_v1';
+    const STORE = 'rhsa_visitor_chat_v2';
+    const POLL_MS = 4000;
 
     const $ = (s, r = document) => r.querySelector(s);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
@@ -16,20 +19,24 @@
 
     /* ---------- الحالة ---------- */
     let state = load();
+    let botMessages = [];      // ردود آلية محلية فقط (لا تُحفظ في القاعدة)
+    let dbMessages = [];       // الرسائل الحقيقية القادمة من القاعدة
+    let pollTimer = null;
+    let sending = false;
 
     function load() {
         try {
             const raw = localStorage.getItem(STORE);
             if (raw) return JSON.parse(raw);
         } catch (e) { /* تجاهل البيانات التالفة */ }
-        return { name: '', phone: '', messages: [], startedAt: '' };
+        return { name: '', phone: '', conversationId: '' };
     }
 
     function save() {
         try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* مساحة ممتلئة */ }
     }
 
-    const isLoggedIn = () => Boolean(state.name && state.phone);
+    const isLoggedIn = () => Boolean(state.name && state.phone && state.conversationId);
 
     /* ---------- التحقق من المدخلات ---------- */
     function checkName(v) {
@@ -49,7 +56,10 @@
         return '';
     }
 
-    const waNumber = (p) => normalizePhone(p).replace(/^\+/, '').replace(/^0/, '966');
+    /* رقم الجوال بصيغة القاعدة: 05xxxxxxxx */
+    function dbPhone(v) {
+        return normalizePhone(v).replace(/^\+?966/, '0');
+    }
 
     /* ---------- الوقت ---------- */
     function clock(iso) {
@@ -57,10 +67,10 @@
         return d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
     }
 
-    /* ---------- الردود الآلية ---------- */
+    /* ---------- الردود الآلية الفورية (محلية فقط، لا تصل لقاعدة البيانات) ---------- */
     const AUTO = [
-        { k: ['سعر', 'كم', 'تكلفة', 'ليلة', 'كلفة'], a: 'سعر الليلة 294 ريال، ويقل السعر للإقامات الطويلة. أخبرني بتواريخك وأرسل لك العرض النهائي.' },
-        { k: ['متاح', 'متوفر', 'حجز', 'فاضي', 'شاغر'], a: 'أتحقق من التقويم وأرد عليك خلال دقائق. ما التواريخ التي تريدها؟' },
+        { k: ['سعر', 'كم', 'تكلفة', 'ليلة', 'كلفة'], a: 'سعر الليلة 294 ريال، ويقل السعر للإقامات الطويلة. أخبرني بتواريخك وسيرد عليك المالك بالعرض النهائي.' },
+        { k: ['متاح', 'متوفر', 'حجز', 'فاضي', 'شاغر'], a: 'وصل طلبك للمالك وسيتحقق من التقويم ويرد عليك خلال دقائق. ما التواريخ التي تريدها؟' },
         { k: ['موقع', 'وين', 'عنوان', 'مكان'], a: 'الشقة في حي السليمانية بالرياض — 7905 عبدالحميد الكاتب، على بعد دقائق من المترو والمستشفيات.' },
         { k: ['واي فاي', 'انترنت', 'إنترنت', 'نت'], a: 'نعم، يوجد إنترنت عالي السرعة مجاني يغطي الشقة بالكامل.' },
         { k: ['موقف', 'سيارة', 'باركن'], a: 'يوجد موقف سيارات مجاني خاص في المبنى.' },
@@ -72,6 +82,49 @@
         const t = text.toLowerCase();
         const hit = AUTO.find((r) => r.k.some((k) => t.includes(k)));
         return hit ? hit.a : null;
+    }
+
+    /* ---------- الاتصال بقاعدة البيانات ---------- */
+    function sb() {
+        return window.getSupabaseClient ? window.getSupabaseClient() : null;
+    }
+
+    async function createConversation(name, phone) {
+        const client = sb();
+        if (!client) throw new Error('no-client');
+
+        const { data, error } = await client
+            .from('conversations')
+            .insert({ visitor_name: name, visitor_phone: dbPhone(phone) })
+            .select('id')
+            .single();
+
+        if (error) throw error;
+        return data.id;
+    }
+
+    async function sendVisitorMessage(text) {
+        const client = sb();
+        if (!client) throw new Error('no-client');
+
+        const { error } = await client
+            .from('messages')
+            .insert({ conversation_id: state.conversationId, sender: 'visitor', body: text });
+
+        if (error) throw error;
+    }
+
+    async function fetchThread() {
+        const client = sb();
+        if (!client || !state.conversationId) return null;
+
+        const { data, error } = await client.rpc('fetch_my_thread', {
+            p_conversation: state.conversationId,
+            p_phone: dbPhone(state.phone),
+        });
+
+        if (error) throw error;
+        return data;
     }
 
     /* ---------- الرسم ---------- */
@@ -96,6 +149,7 @@
                 </div>
 
                 <button class="chat-btn" id="cv-start">ابدأ المحادثة</button>
+                <span class="err" id="cv-start-err" style="display:block;text-align:center;margin-top:6px"></span>
 
                 <div class="chat-or">أو</div>
 
@@ -110,29 +164,43 @@
 
         const name = $('#cv-name');
         const phone = $('#cv-phone');
+        const startBtn = $('#cv-start');
 
-        $('#cv-start').addEventListener('click', () => {
+        startBtn.addEventListener('click', async () => {
             const ne = checkName(name.value);
             const pe = checkPhone(phone.value);
             $('#cv-name-err').textContent = ne;
             $('#cv-phone-err').textContent = pe;
+            $('#cv-start-err').textContent = '';
             if (ne) return name.focus();
             if (pe) return phone.focus();
 
-            state.name = name.value.trim().replace(/\s+/g, ' ');
-            state.phone = normalizePhone(phone.value);
-            state.startedAt = new Date().toISOString();
-            state.messages = [{
-                from: 'them',
-                text: `أهلاً ${state.name.split(' ')[0]} 👋 أنا ${OWNER_NAME}، مالك الشقة. كيف أقدر أساعدك؟`,
-                at: new Date().toISOString(),
-            }];
-            save();
-            renderChat();
+            const cleanName = name.value.trim().replace(/\s+/g, ' ');
+            startBtn.disabled = true;
+            startBtn.textContent = 'جارٍ الاتصال…';
+
+            try {
+                const id = await createConversation(cleanName, phone.value);
+                state.name = cleanName;
+                state.phone = normalizePhone(phone.value);
+                state.conversationId = id;
+                save();
+                botMessages = [{
+                    sender: 'owner', body: `أهلاً ${cleanName.split(' ')[0]} 👋 أنا ${OWNER_NAME}، مالك الشقة. كيف أقدر أساعدك؟`,
+                    created_at: new Date().toISOString(), local: true,
+                }];
+                renderChat();
+                startPolling();
+            } catch (err) {
+                console.error('[chat] فشل إنشاء المحادثة:', err);
+                startBtn.disabled = false;
+                startBtn.textContent = 'ابدأ المحادثة';
+                $('#cv-start-err').textContent = 'تعذّر الاتصال حالياً — استخدم زر الواتساب أدناه.';
+            }
         });
 
         [name, phone].forEach((el) => el.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') $('#cv-start').click();
+            if (e.key === 'Enter') startBtn.click();
         }));
     }
 
@@ -158,9 +226,9 @@
         panel().innerHTML = head() + `
             <div class="chat-body" id="cv-body">
                 <div class="chat-note">
-                    تصلك الردود هنا وعلى الواتساب على الرقم ${esc(state.phone)}
+                    تصلك الردود هنا مباشرة، وعلى الواتساب على الرقم ${esc(state.phone)}
                 </div>
-                ${state.messages.map(bubble).join('')}
+                <div id="cv-messages"></div>
             </div>
 
             <a class="chat-forward" id="cv-forward" target="_blank" rel="noopener" hidden>
@@ -180,9 +248,8 @@
                 </button>
             </div>`;
 
-        scrollDown();
+        renderMessages();
 
-        markUnsent();
         $('#cv-send').addEventListener('click', send);
         $('#cv-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
         $('#cv-quick').querySelectorAll('button').forEach((b) => {
@@ -191,7 +258,20 @@
     }
 
     function bubble(m) {
-        return `<div class="chat-msg ${m.from === 'me' ? 'me' : 'them'}">${esc(m.text)}<time>${clock(m.at)}</time></div>`;
+        const mine = m.sender === 'visitor';
+        return `<div class="chat-msg ${mine ? 'me' : 'them'}">${esc(m.body)}<time>${clock(m.created_at)}</time></div>`;
+    }
+
+    function renderMessages() {
+        const box = $('#cv-messages');
+        if (!box) return;
+
+        const all = dbMessages.concat(botMessages)
+            .slice()
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        box.innerHTML = all.map(bubble).join('');
+        scrollDown();
     }
 
     function scrollDown() {
@@ -199,50 +279,84 @@
         if (body) body.scrollTop = body.scrollHeight;
     }
 
-    function push(from, text) {
-        state.messages.push({ from, text, at: new Date().toISOString() });
-        save();
-        const body = $('#cv-body');
-        if (body) {
-            body.insertAdjacentHTML('beforeend', bubble(state.messages[state.messages.length - 1]));
-            scrollDown();
+    async function send() {
+        const input = $('#cv-input');
+        const text = input.value.trim();
+        if (!text || sending) return;
+
+        input.value = '';
+        sending = true;
+
+        // عرض فوري (متفائل) قبل تأكيد الحفظ
+        const optimistic = { sender: 'visitor', body: text, created_at: new Date().toISOString(), local: true };
+        botMessages.push(optimistic);
+        renderMessages();
+
+        try {
+            await sendVisitorMessage(text);
+            // أزل النسخة المحلية؛ الفحص الدوري القادم سيجلبها من القاعدة
+            botMessages = botMessages.filter((m) => m !== optimistic);
+            markForwardLink(text);
+
+            const reply = autoReply(text);
+            if (reply) {
+                setTimeout(() => {
+                    botMessages.push({ sender: 'owner', body: reply, created_at: new Date().toISOString(), local: true });
+                    renderMessages();
+                }, 700);
+            }
+
+            await pollOnce();
+        } catch (err) {
+            console.error('[chat] فشل إرسال الرسالة:', err);
+            optimistic.body += '  ⚠️ لم تصل — جرّب الواتساب';
+            renderMessages();
+            markForwardLink(text);
+        } finally {
+            sending = false;
         }
     }
 
-    function send() {
-        const input = $('#cv-input');
-        const text = input.value.trim();
-        if (!text) return;
-
-        input.value = '';
-        push('me', text);
-        markUnsent();
-
-        // رد آلي فوري إن تطابق السؤال، وإلا إشعار بأن المالك سيرد
-        const reply = autoReply(text);
-        setTimeout(() => {
-            push('them', reply || 'وصلتني رسالتك ✅ سأرد عليك بأقرب وقت. للرد الفوري اضغط زر الواتساب بالأسفل.');
-        }, reply ? 700 : 900);
-    }
-
-    /* إرسال المحادثة للمالك عبر واتساب — لأن الموقع ثابت بلا خادم */
-    function markUnsent() {
+    /* شريط تحويل احتياطي للواتساب — يبقى متاحاً دائماً */
+    function markForwardLink(lastText) {
         const link = $('#cv-forward');
         if (!link) return;
-
-        const mine = state.messages.filter((m) => m.from === 'me');
-        if (!mine.length) return;
 
         const summary = [
             'محادثة من الموقع',
             `الاسم: ${state.name}`,
             `الجوال: ${state.phone}`,
             '',
-            ...mine.map((m) => `• ${m.text}`),
+            `• ${lastText}`,
         ].join('\n');
 
         link.href = `https://wa.me/${OWNER_WA}?text=${encodeURIComponent(summary)}`;
         link.hidden = false;
+    }
+
+    /* ---------- الفحص الدوري لردود المالك ---------- */
+    async function pollOnce() {
+        if (!state.conversationId) return;
+        try {
+            const rows = await fetchThread();
+            if (Array.isArray(rows)) {
+                dbMessages = rows;
+                renderMessages();
+            }
+        } catch (err) {
+            console.warn('[chat] تعذّر جلب الردود:', err.message || err);
+        }
+    }
+
+    function startPolling() {
+        stopPolling();
+        pollOnce();
+        pollTimer = setInterval(pollOnce, POLL_MS);
+    }
+
+    function stopPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
     }
 
     /* ---------- الفتح والإغلاق ---------- */
@@ -250,7 +364,14 @@
         panel().classList.add('open');
         document.body.classList.add('chat-open');
         $('#chat-launcher').style.display = 'none';
-        if (isLoggedIn()) renderChat(); else renderLogin();
+
+        if (isLoggedIn()) {
+            renderChat();
+            startPolling();
+        } else {
+            renderLogin();
+        }
+
         $('#cv-close').addEventListener('click', close);
         const first = $('#cv-input') || $('#cv-name');
         if (first && window.innerWidth > 560) first.focus();
@@ -260,6 +381,7 @@
         panel().classList.remove('open');
         document.body.classList.remove('chat-open');
         $('#chat-launcher').style.display = '';
+        stopPolling();
     }
 
     /* ---------- الإقلاع ---------- */
@@ -269,6 +391,10 @@
         launcher.addEventListener('click', open);
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && panel().classList.contains('open')) close();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopPolling();
+            else if (panel().classList.contains('open') && isLoggedIn()) startPolling();
         });
     }
 

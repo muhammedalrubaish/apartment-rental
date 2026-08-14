@@ -10,17 +10,12 @@
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
     /* ---------------------------------------------------------------------
-       0. بوابة الدخول
-       ملاحظة: هذه حماية من طرف المتصفح فقط (الموقع ثابت بلا خادم).
-       تكفي لإخفاء اللوحة عن الزوار، ولا تصلح لحماية بيانات بالغة الحساسية.
+       0. بوابة الدخول — مصادقة حقيقية عبر Supabase Auth
+       رمز الدخول هو كلمة سر حساب المالك الفعلي؛ الدخول ينشئ جلسة حقيقية
+       (JWT) تمنح صلاحية القراءة والكتابة على الرسائل بحكم سياسات RLS
+       (role = authenticated)، وليست مجرد إخفاء واجهة كما كانت سابقاً.
        --------------------------------------------------------------------- */
-    const PASS_HASH = '0f806819494dd83bc2efe425e67ad5c5c9105e073c04dc72a889fc82747526f1';
-    const UNLOCK_KEY = 'rhsa_admin_unlocked';
-
-    async function sha256(text) {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-        return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-    }
+    const OWNER_EMAIL = 'muhammedalrubaish@gmail.com';
 
     function unlock() {
         const lock = document.getElementById('lock');
@@ -30,24 +25,48 @@
         start();
     }
 
-    function initGate() {
+    async function initGate() {
         const form = document.getElementById('lock-form');
         const input = document.getElementById('lock-pass');
         const err = document.getElementById('lock-err');
+        const client = window.getSupabaseClient ? window.getSupabaseClient() : null;
 
         if (!form) return unlock();                       // لا توجد بوابة
-        if (sessionStorage.getItem(UNLOCK_KEY) === '1') return unlock();
+
+        // جلسة محفوظة مسبقاً (Supabase يحفظها في localStorage تلقائياً)
+        if (client) {
+            const { data } = await client.auth.getSession();
+            if (data && data.session) return unlock();
+        }
 
         input.focus();
         let tries = 0;
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const hash = await sha256(input.value.trim());
 
-            if (hash === PASS_HASH) {
-                sessionStorage.setItem(UNLOCK_KEY, '1');
-                unlock();
+            if (!client) {
+                err.textContent = 'تعذّر الاتصال بالخادم — تحقق من الإنترنت';
+                return;
+            }
+
+            const btn = form.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'جارٍ التحقق…';
+
+            const { error } = await client.auth.signInWithPassword({
+                email: OWNER_EMAIL,
+                password: input.value.trim(),
+            });
+
+            btn.disabled = false;
+            btn.textContent = 'دخول';
+
+            if (!error) return unlock();
+
+            if (error.status === 0 || error.name === 'AuthRetryableFetchError') {
+                err.textContent = 'تعذّر الاتصال بالخادم — تحقق من الإنترنت وحاول مجدداً';
+                input.focus();
                 return;
             }
 
@@ -228,32 +247,6 @@
         const now = Date.now();
         const H = (h) => new Date(now - h * 3600000).toISOString();
 
-        const threads = [
-            {
-                id: uid(), name: 'فهد العتيبي', phone: '0533221144', channel: 'site', unread: 2,
-                messages: [
-                    { from: 'them', text: 'السلام عليكم، الشقة متاحة نهاية الأسبوع؟', at: H(26) },
-                    { from: 'me', text: 'وعليكم السلام، نعم متاحة من الخميس إلى الأحد.', at: H(25) },
-                    { from: 'them', text: 'ممتاز. هل يوجد موقف سيارة خاص؟', at: H(3) },
-                    { from: 'them', text: 'وكم مبلغ التأمين المسترجع؟', at: H(2) },
-                ],
-            },
-            {
-                id: uid(), name: 'نورة الشمري', phone: '0567788990', channel: 'whatsapp', unread: 0,
-                messages: [
-                    { from: 'them', text: 'مساء الخير، أبغى أمدد الحجز يوم إضافي.', at: H(50) },
-                    { from: 'me', text: 'مساء النور، تم التمديد وأُضيف اليوم للتقويم.', at: H(49) },
-                    { from: 'them', text: 'شكراً جزيلاً 🌸', at: H(48) },
-                ],
-            },
-            {
-                id: uid(), name: 'سارة القحطاني', phone: '0509876543', channel: 'airbnb', unread: 1,
-                messages: [
-                    { from: 'them', text: 'نسيت شاحن الجوال في الغرفة، ممكن تتأكد؟', at: H(6) },
-                ],
-            },
-        ];
-
         const notifications = [
             { id: uid(), type: 'booking', title: 'حجز جديد مؤكد', body: 'فهد العتيبي — 3 ليالٍ عبر الموقع المباشر', at: H(2), read: false },
             { id: uid(), type: 'bill', title: 'فاتورة الكهرباء تستحق قريباً', body: `مبلغ 420 ر.س — الاستحقاق ${M(3)}`, at: H(5), read: false },
@@ -271,7 +264,7 @@
                 { id: uid(), name: 'جاذر إن (Gathern)', url: '', lastSync: '' },
                 { id: uid(), name: 'Airbnb', url: '', lastSync: '' },
             ],
-            properties, bookings, expenses, contacts, threads, notifications,
+            properties, bookings, expenses, contacts, notifications,
         };
     }
 
@@ -280,7 +273,6 @@
        --------------------------------------------------------------------- */
     let state = load();
     let calCursor = new Date();
-    let activeThread = null;
     let notifFilter = 'all';
     let chartMonths = 6;
 
@@ -832,7 +824,7 @@
     }
 
     /* ---------------------------------------------------------------------
-       8. الرسائل
+       8. الرسائل — متصلة بقاعدة بيانات Supabase (جدولا conversations وmessages)
        --------------------------------------------------------------------- */
     const CHANNEL_META = {
         site: ['🌐', 'نموذج الموقع', 'tag-brand'],
@@ -841,25 +833,88 @@
         gathern: ['🏷️', 'جاذر إن', 'tag-info'],
     };
 
+    // حالة الرسائل الحية — لا تُحفظ في localStorage، تُسحب من الخادم مباشرة
+    const msg = { conversations: [], byId: {}, activeId: null, channel: null, loaded: false };
+
+    function sbc() {
+        return window.getSupabaseClient ? window.getSupabaseClient() : null;
+    }
+
+    async function loadConversations() {
+        const client = sbc();
+        if (!client) return;
+
+        const { data, error } = await client
+            .from('conversations')
+            .select('*')
+            .order('last_at', { ascending: false });
+
+        if (error) { console.error('[messages] فشل تحميل المحادثات:', error); return; }
+
+        msg.conversations = data || [];
+        msg.loaded = true;
+        renderMessages();
+    }
+
+    async function loadThreadMessages(id) {
+        const client = sbc();
+        if (!client) return [];
+
+        const { data, error } = await client
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', id)
+            .order('created_at', { ascending: true });
+
+        if (error) { console.error('[messages] فشل تحميل الرسائل:', error); return []; }
+        return data || [];
+    }
+
+    async function sendOwnerReply(id, text) {
+        const client = sbc();
+        if (!client) return false;
+
+        const { error } = await client
+            .from('messages')
+            .insert({ conversation_id: id, sender: 'owner', body: text });
+
+        if (error) { console.error('[messages] فشل إرسال الرد:', error); return false; }
+        return true;
+    }
+
+    async function markConversationRead(id) {
+        const client = sbc();
+        if (!client) return;
+        await client.from('conversations').update({ unread_owner: 0 }).eq('id', id);
+        const c = msg.conversations.find((x) => x.id === id);
+        if (c) c.unread_owner = 0;
+    }
+
     function renderMessages() {
         const list = $('#chat-list');
-        const totalUnread = state.threads.reduce((s, t) => s + (t.unread || 0), 0);
+        if (!msg.loaded) {
+            list.innerHTML = emptyBox('⏳', 'جارٍ التحميل…', 'يتم الاتصال بقاعدة البيانات');
+            loadConversations();
+            return;
+        }
 
-        if (!state.threads.length) {
-            list.innerHTML = emptyBox('💬', 'لا رسائل', 'ستصلك رسائل الزبائن هنا');
+        const totalUnread = msg.conversations.reduce((s, c) => s + (c.unread_owner || 0), 0);
+
+        if (!msg.conversations.length) {
+            list.innerHTML = emptyBox('💬', 'لا رسائل', 'ستصلك رسائل الزبائن من الموقع هنا فور وصولها');
+            $('#chat-panel').innerHTML = `<div class="chat-empty">اختر محادثة لعرضها</div>`;
         } else {
-            list.innerHTML = state.threads.map((t) => {
-                const last = t.messages[t.messages.length - 1];
-                const ch = CHANNEL_META[t.channel] || ['✉️', t.channel, 'tag-mute'];
-                return `<button class="chat-item ${activeThread === t.id ? 'active' : ''}" data-thread="${t.id}">
-                    <span class="av">${escapeHtml(t.name.charAt(0))}</span>
+            list.innerHTML = msg.conversations.map((c) => {
+                const ch = CHANNEL_META[c.channel] || CHANNEL_META.site;
+                return `<button class="chat-item ${msg.activeId === c.id ? 'active' : ''}" data-thread="${c.id}">
+                    <span class="av">${escapeHtml(c.visitor_name.charAt(0))}</span>
                     <span class="meta">
-                        <span class="nm">${escapeHtml(t.name)} <span style="font-size:11px">${ch[0]}</span></span>
-                        <span class="pv">${escapeHtml(last ? last.text : '')}</span>
+                        <span class="nm">${escapeHtml(c.visitor_name)} <span style="font-size:11px">${ch[0]}</span></span>
+                        <span class="pv">${escapeHtml(c.last_message || 'لا رسائل بعد')}</span>
                     </span>
                     <span style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-                        <span class="tm">${last ? relTime(last.at) : ''}</span>
-                        ${t.unread ? '<span class="unread-dot"></span>' : ''}
+                        <span class="tm">${c.last_at ? relTime(c.last_at) : ''}</span>
+                        ${c.unread_owner ? '<span class="unread-dot"></span>' : ''}
                     </span>
                 </button>`;
             }).join('');
@@ -867,76 +922,137 @@
             $$('[data-thread]', list).forEach((el) => {
                 el.addEventListener('click', () => openThread(el.dataset.thread));
             });
+
+            if (!msg.activeId) openThread(msg.conversations[0].id, true);
+            else openThread(msg.activeId, true);
         }
 
         const badge = $('#badge-msg');
         badge.hidden = !totalUnread;
         badge.textContent = totalUnread;
-
-        // فتح أول محادثة تلقائياً لتجنّب لوحة فارغة
-        if (!activeThread && state.threads.length) activeThread = state.threads[0].id;
-        if (activeThread) openThread(activeThread, true);
+        updateBadges();
         renderChannels();
     }
 
-    function openThread(id, keepList) {
-        const t = state.threads.find((x) => x.id === id);
-        if (!t) return;
+    async function openThread(id, keepList) {
+        const c = msg.conversations.find((x) => x.id === id);
+        if (!c) return;
 
-        activeThread = id;
-        if (t.unread) { t.unread = 0; save(); }
+        msg.activeId = id;
+        $$('.chat-item').forEach((el) => el.classList.toggle('active', el.dataset.thread === id));
 
-        const ch = CHANNEL_META[t.channel] || ['✉️', t.channel, 'tag-mute'];
+        if (c.unread_owner) markConversationRead(id).then(renderMessages);
+
+        const ch = CHANNEL_META[c.channel] || CHANNEL_META.site;
         $('#chat-panel').innerHTML = `
             <div class="chat-top">
-                <span class="av" style="width:36px;height:36px;border-radius:50%;background:var(--surface-3);display:grid;place-items:center;font-weight:800">${escapeHtml(t.name.charAt(0))}</span>
+                <span class="av" style="width:36px;height:36px;border-radius:50%;background:var(--surface-3);display:grid;place-items:center;font-weight:800">${escapeHtml(c.visitor_name.charAt(0))}</span>
                 <div style="margin-inline-end:auto">
-                    <div style="font-size:14px;font-weight:800">${escapeHtml(t.name)}</div>
-                    <div style="font-size:11.5px;color:var(--muted);font-weight:600">${escapeHtml(t.phone || '')}</div>
+                    <div style="font-size:14px;font-weight:800">${escapeHtml(c.visitor_name)}</div>
+                    <div style="font-size:11.5px;color:var(--muted);font-weight:600" dir="ltr">${escapeHtml(c.visitor_phone || '')}</div>
                 </div>
                 <span class="tag ${ch[2]}">${ch[0]} ${ch[1]}</span>
+                <a class="btn btn-ghost btn-sm" href="https://wa.me/${(c.visitor_phone || '').replace(/^0/, '966')}" target="_blank" rel="noopener">واتساب</a>
                 <button class="btn btn-ghost btn-sm" id="btn-thread-book">+ حجز</button>
             </div>
             <div class="chat-body" id="chat-body">
-                ${t.messages.map((m) => `
-                    <div class="msg ${m.from === 'me' ? 'me' : 'them'}">
-                        ${escapeHtml(m.text)}
-                        <span class="t">${relTime(m.at)}</span>
-                    </div>`).join('')}
+                <div class="empty" style="padding:20px"><div class="ic">⏳</div></div>
             </div>
             <div class="chat-compose">
                 <input class="input" id="msg-input" placeholder="اكتب رداً…">
                 <button class="btn btn-primary" id="msg-send">إرسال</button>
             </div>`;
 
-        const body = $('#chat-body');
-        body.scrollTop = body.scrollHeight;
+        $('#btn-thread-book').addEventListener('click', () => {
+            openBookingForm({ guest: c.visitor_name, phone: c.visitor_phone, source: 'direct' });
+        });
 
-        const send = () => {
+        const renderBubbles = (rows) => {
+            const body = $('#chat-body');
+            if (!body) return;
+            body.innerHTML = rows.length
+                ? rows.map((m) => `
+                    <div class="msg ${m.sender === 'owner' ? 'me' : 'them'}">
+                        ${escapeHtml(m.body)}
+                        <span class="t">${relTime(m.created_at)}</span>
+                    </div>`).join('')
+                : emptyBox('💬', 'لا رسائل بعد', '');
+            body.scrollTop = body.scrollHeight;
+        };
+
+        const rows = await loadThreadMessages(id);
+        if (msg.activeId !== id) return;   // بدّل المحادثة أثناء التحميل
+        msg.byId[id] = rows;
+        renderBubbles(rows);
+
+        const send = async () => {
             const input = $('#msg-input');
             const text = input.value.trim();
             if (!text) return;
-            t.messages.push({ from: 'me', text, at: new Date().toISOString() });
-            save();
-            openThread(id, true);
-            if (!keepList) renderMessages();
+            input.value = '';
+
+            const ok = await sendOwnerReply(id, text);
+            if (ok) {
+                const fresh = await loadThreadMessages(id);
+                msg.byId[id] = fresh;
+                if (msg.activeId === id) renderBubbles(fresh);
+                const conv = msg.conversations.find((x) => x.id === id);
+                if (conv) { conv.last_message = text; conv.last_at = new Date().toISOString(); }
+            } else {
+                toast('تعذّر إرسال الرد', true);
+            }
         };
 
         $('#msg-send').addEventListener('click', send);
         $('#msg-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
-        $('#btn-thread-book').addEventListener('click', () => {
-            openBookingForm({ guest: t.name, phone: t.phone, source: 'direct' });
-        });
+    }
 
-        $$('.chat-item').forEach((el) => el.classList.toggle('active', el.dataset.thread === id));
+    /* بث لحظي: أي رسالة أو محادثة جديدة تحدّث الواجهة فوراً بلا تحديث يدوي */
+    function startMessagesRealtime() {
+        const client = sbc();
+        if (!client || msg.channel) return;
+
+        msg.channel = client
+            .channel('admin-messages')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
+                loadConversations();
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+                const row = payload.new;
+                if (row && row.conversation_id === msg.activeId) {
+                    loadThreadMessages(msg.activeId).then((rows) => {
+                        msg.byId[msg.activeId] = rows;
+                        const body = $('#chat-body');
+                        if (!body) return;
+                        body.innerHTML = rows.map((m) => `
+                            <div class="msg ${m.sender === 'owner' ? 'me' : 'them'}">
+                                ${escapeHtml(m.body)}
+                                <span class="t">${relTime(m.created_at)}</span>
+                            </div>`).join('');
+                        body.scrollTop = body.scrollHeight;
+                    });
+                }
+                loadConversations();
+                if (row && row.sender === 'visitor') {
+                    pushNotification('message', 'رسالة جديدة', row.body.slice(0, 80));
+                    updateBadges();
+                }
+            })
+            .subscribe();
+    }
+
+    function stopMessagesRealtime() {
+        const client = sbc();
+        if (client && msg.channel) client.removeChannel(msg.channel);
+        msg.channel = null;
     }
 
     function renderChannels() {
         const counts = {};
-        state.threads.forEach((t) => { counts[t.channel] = (counts[t.channel] || 0) + 1; });
+        msg.conversations.forEach((c) => { counts[c.channel] = (counts[c.channel] || 0) + 1; });
 
         const rows = [
-            { key: 'site', desc: 'نموذج التواصل في صفحة الشقة — يعمل الآن', tag: '<span class="tag tag-ok">مفعّل</span>' },
+            { key: 'site', desc: 'نموذج التواصل في صفحة الشقة — يعمل الآن ومتصل بقاعدة البيانات', tag: '<span class="tag tag-ok">مفعّل</span>' },
             { key: 'whatsapp', desc: 'بوت هجين: رد آلي على الاستفسارات المتكررة مع تحويل المحادثة للمالك', tag: '<span class="tag tag-warn">قيد التجهيز</span>' },
             { key: 'gathern', desc: 'رسائل منصة جاذر إن', tag: '<span class="tag tag-mute">يدوي</span>' },
             { key: 'airbnb', desc: 'رسائل منصة Airbnb', tag: '<span class="tag tag-mute">يدوي</span>' },
@@ -1110,7 +1226,7 @@
         badge.textContent = unreadN;
         $('#bell-dot').hidden = !unreadN;
 
-        const unreadM = state.threads.reduce((s, t) => s + (t.unread || 0), 0);
+        const unreadM = msg.conversations.reduce((s, c) => s + (c.unread_owner || 0), 0);
         const bm = $('#badge-msg');
         bm.hidden = !unreadM;
         bm.textContent = unreadM;
@@ -1655,6 +1771,16 @@
         // إغلاق النافذة
         $('#modal-back').addEventListener('click', (e) => { if (e.target.id === 'modal-back') closeModal(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        // تسجيل الخروج
+        const signOutBtn = $('#btn-sign-out');
+        if (signOutBtn) signOutBtn.addEventListener('click', async () => {
+            if (!confirm('تسجيل الخروج من لوحة التحكم؟')) return;
+            const client = window.getSupabaseClient ? window.getSupabaseClient() : null;
+            if (client) await client.auth.signOut();
+            stopMessagesRealtime();
+            location.reload();
+        });
     }
 
     /* ---------------------------------------------------------------------
@@ -1666,6 +1792,8 @@
         applyLang();
         bind();
         updateBadges();
+        loadConversations();       // لتحديث شارة الرسائل حتى قبل فتح القسم
+        startMessagesRealtime();   // بث لحظي: رسائل الزوار الجديدة تصل بلا تحديث
 
         const hash = location.hash.replace('#', '');
         go(PAGE_META[hash] ? hash : 'dashboard');
