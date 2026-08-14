@@ -1,0 +1,23 @@
+{
+  "name": "RentAPA",
+  "short_name": "RentAPA",
+  "description": "شقة متكاملة وأنيقة بدخول ذكي | الرياض - حي السليمانية",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f2622a",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "assets/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
