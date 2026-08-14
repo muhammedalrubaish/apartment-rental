@@ -513,7 +513,7 @@
             </div>`).join('');
     }
 
-    const SOURCE_LABEL = { direct: 'الموقع المباشر', gathern: 'جاذر إن', airbnb: 'Airbnb', ical: 'مزامنة iCal', block: 'حجب', manual: 'إضافة يدوية' };
+    const SOURCE_LABEL = { direct: 'الموقع المباشر', gathern: 'جاذر إن', airbnb: 'Airbnb', ical: 'مزامنة iCal', block: 'حجب', manual: 'إضافة يدوية', site_chat: 'محادثة الموقع' };
     const STATUS_TAG = {
         confirmed: ['tag-ok', 'مؤكد'],
         pending: ['tag-warn', 'بانتظار التأكيد'],
@@ -853,7 +853,36 @@
 
         msg.conversations = data || [];
         msg.loaded = true;
+        syncContactsFromConversations();
         renderMessages();
+    }
+
+    /* حفظ معلومات تسجيل دخول الزائر للمحادثة كجهة اتصال — تلقائياً وبلا تكرار */
+    function syncContactsFromConversations() {
+        let added = 0;
+
+        msg.conversations.forEach((c) => {
+            if (!c.visitor_phone || !c.visitor_name) return;
+            const exists = state.contacts.some((x) => x.phone === c.visitor_phone);
+            if (exists) return;
+
+            state.contacts.push({
+                id: uid(),
+                name: c.visitor_name,
+                phone: c.visitor_phone,
+                email: '',
+                source: 'site_chat',
+                createdAt: c.created_at ? c.created_at.slice(0, 10) : todayISO(),
+                note: 'سجّل بيانات الدخول عبر المحادثة المباشرة في الموقع',
+            });
+            added++;
+        });
+
+        if (added) {
+            save();
+            const contactsView = document.getElementById('view-contacts');
+            if (contactsView && contactsView.classList.contains('active')) renderContacts();
+        }
     }
 
     async function loadThreadMessages(id) {
