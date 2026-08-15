@@ -1840,6 +1840,9 @@ body.chat-open .floating-wa { display: none; }
 
 @media (max-width: 560px) {
     .chat-launcher { inset-inline-start: 16px; bottom: 16px; width: 52px; height: 52px; }
+    .floating-wa { inset-inline-end: 16px; bottom: 16px; width: 52px; height: 52px; }
+    .floating-wa svg { width: 26px; height: 26px; }
+    .chat-launcher svg { width: 22px; height: 22px; }
     .chat-panel {
         inset-inline-start: 10px;
         inset-inline-end: 10px;
