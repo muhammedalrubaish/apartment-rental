@@ -48,7 +48,7 @@ body {
     top: 0;
     z-index: 1000;
     border-bottom: 1px solid var(--border);
-    padding: 14px 0;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 0 14px;
 }
 
 .nav-container {
@@ -1111,7 +1111,7 @@ body {
 /* الشريط العلوي في سطر واحد على الجوال */
 @media (max-width: 600px) {
     .navbar {
-        padding: 10px 0;
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 0 10px;
     }
 
     .nav-container {
