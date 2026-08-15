@@ -1497,22 +1497,21 @@ input[type="date"].form-control::-webkit-datetime-edit {
     z-index: 9998;
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: 56px;
-    padding: 0 20px 0 16px;
-    border-radius: 30px;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border-radius: 50%;
     background: var(--primary);
     color: #fff;
-    font-size: 14.5px;
-    font-weight: 800;
     border: none;
     cursor: pointer;
     box-shadow: 0 8px 26px rgba(242, 98, 42, 0.42);
     transition: var(--transition);
 }
 
-.chat-launcher:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(242, 98, 42, 0.5); }
-.chat-launcher svg { width: 22px; height: 22px; }
+.chat-launcher:hover { transform: scale(1.1); box-shadow: 0 12px 32px rgba(242, 98, 42, 0.5); }
+.chat-launcher svg { width: 26px; height: 26px; }
 
 .chat-launcher .cl-dot {
     position: absolute;
@@ -1773,7 +1772,7 @@ input[type="date"].form-control::-webkit-datetime-edit {
 body.chat-open .floating-wa { display: none; }
 
 @media (max-width: 560px) {
-    .chat-launcher { inset-inline-start: 16px; bottom: 16px; height: 52px; padding: 0 16px 0 14px; font-size: 13.5px; }
+    .chat-launcher { inset-inline-start: 16px; bottom: 16px; width: 52px; height: 52px; }
     .chat-panel {
         inset-inline-start: 10px;
         inset-inline-end: 10px;
