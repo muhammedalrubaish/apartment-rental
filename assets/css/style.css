@@ -164,6 +164,44 @@ body {
     background: linear-gradient(90deg, var(--primary), var(--accent-emerald), var(--accent-gold));
 }
 
+.hero-title {
+    font-size: clamp(17px, 4.2vw, 26px);
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.hero-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.hero-badge {
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+    .hero-badge {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 420px) {
+    .hero-badge {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+}
+
 .titles-wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
