@@ -606,6 +606,7 @@ body.lightbox-open { overflow: hidden; }
 
 input[type="date"].form-control {
     direction: ltr;
+    unicode-bidi: isolate;
     text-align: start;
 }
 
