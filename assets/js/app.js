@@ -90,3 +90,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.addEventListener('resize', fitOneLine);
     document.addEventListener('DOMContentLoaded', fitOneLine);
 })();
+
+/* ============================================================
+   عارض الصور بملء الشاشة (Lightbox) — بدون فتح تبويب جديد
+   ============================================================ */
+(function () {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    const closeBtn = document.getElementById('lightbox-close');
+    if (!lightbox || !lightboxImg) return;
+
+    function open(img) {
+        lightboxImg.src = img.currentSrc || img.src;
+        lightboxImg.alt = img.alt || '';
+        const figcaption = img.closest('figure')?.querySelector('.gallery-caption');
+        lightboxCaption.textContent = figcaption ? figcaption.textContent : (img.alt || '');
+        document.body.classList.add('lightbox-open');
+        requestAnimationFrame(() => lightbox.classList.add('open'));
+    }
+
+    function close() {
+        lightbox.classList.remove('open');
+        document.body.classList.remove('lightbox-open');
+        setTimeout(() => { lightboxImg.src = ''; }, 250);
+    }
+
+    document.querySelectorAll('.gallery-img').forEach((img) => {
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', () => open(img));
+    });
+
+    closeBtn?.addEventListener('click', close);
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) close();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lightbox.classList.contains('open')) close();
+    });
+})();
