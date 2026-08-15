@@ -1482,18 +1482,25 @@ input[type="date"].form-control::-webkit-datetime-edit {
 
 .apt3d-chip {
     font-family: inherit;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--primary-dark);
     background: var(--primary-light);
     border: 1px solid #bae6fd;
-    border-radius: 20px;
-    padding: 8px 14px;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all .18s ease;
     flex-shrink: 0;
     white-space: nowrap;
 }
+
+.apt3d-chip-label { display: none; }
 
 .apt3d-chip:hover { background: var(--primary-light); transform: translateY(-1px); }
 
@@ -1509,31 +1516,9 @@ input[type="date"].form-control::-webkit-datetime-edit {
     border-color: #e2e8f0;
 }
 
-.apt3d-chip-icon {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    border-radius: 50%;
-}
-
-/* على الشاشات الضيقة: أيقونات فقط بلا نص حتى يظهر الشريط كاملاً بسطر واحد دون تمرير */
+/* على الشاشات الضيقة: توزيع متساوٍ حتى يظهر الشريط كاملاً بسطر واحد دون تمرير */
 @media (max-width: 560px) {
     .apt3d-chips { overflow-x: visible; justify-content: space-between; }
-    .apt3d-chip:not(.apt3d-chip-icon) {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 15px;
-        border-radius: 50%;
-    }
-    .apt3d-chip-label { display: none; }
 }
 
 .apt3d-stage { position: relative; }
@@ -1598,7 +1583,6 @@ input[type="date"].form-control::-webkit-datetime-edit {
 @media (max-width: 640px) {
     .apt3d-canvas { aspect-ratio: 4 / 3; }
     .apt3d-info { max-width: none; inset-inline: 10px; bottom: 10px; }
-    .apt3d-chip { font-size: 12px; padding: 7px 12px; }
 }
 
 /* رابط لوحة تحكم المالك في الشريط العلوي */
