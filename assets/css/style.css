@@ -606,18 +606,13 @@ body.lightbox-open { overflow: hidden; }
 
 input[type="date"].form-control {
     direction: ltr;
-    text-align: right;
+    text-align: start;
 }
 
 input[type="date"].form-control::-webkit-calendar-picker-indicator {
     margin-inline-start: 8px;
     margin-inline-end: 0;
     filter: opacity(0.6);
-}
-
-input[type="date"].form-control::-webkit-datetime-edit {
-    direction: ltr;
-    text-align: right;
 }
 
 .calc-summary {
