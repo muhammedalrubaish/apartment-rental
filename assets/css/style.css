@@ -1450,6 +1450,22 @@ input[type="date"].form-control::-webkit-datetime-edit {
     border-radius: 50%;
 }
 
+/* على الشاشات الضيقة: أيقونات فقط بلا نص حتى يظهر الشريط كاملاً بسطر واحد دون تمرير */
+@media (max-width: 560px) {
+    .apt3d-chips { overflow-x: visible; justify-content: space-between; }
+    .apt3d-chip:not(.apt3d-chip-icon) {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        border-radius: 50%;
+    }
+    .apt3d-chip-label { display: none; }
+}
+
 .apt3d-stage { position: relative; }
 
 .apt3d-canvas {
