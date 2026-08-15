@@ -70,6 +70,14 @@ body {
     text-decoration: none;
 }
 
+.brand-logo-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
 .brand-badge {
     background: linear-gradient(135deg, var(--primary), #10b981);
     color: #ffffff;
@@ -1143,6 +1151,11 @@ input[type="date"].form-control::-webkit-datetime-edit {
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: 0;
+    }
+
+    .brand-logo-icon {
+        width: 22px;
+        height: 22px;
     }
 
     .brand-badge {
