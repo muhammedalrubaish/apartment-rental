@@ -934,7 +934,10 @@ function init(container, plan) {
     const rotBtn = document.getElementById('apt3d-rotate');
     if (rotBtn) rotBtn.addEventListener('click', () => {
         autoRotate = !autoRotate;
-        rotBtn.textContent = autoRotate ? '⏸️ إيقاف الدوران' : '▶️ تشغيل الدوران';
+        const label = autoRotate ? 'إيقاف الدوران' : 'تشغيل الدوران';
+        rotBtn.textContent = autoRotate ? '⏸️' : '▶️';
+        rotBtn.title = label;
+        rotBtn.setAttribute('aria-label', label);
     });
 
     function resize() {
