@@ -1494,6 +1494,7 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     transition: all .18s ease;
     flex-shrink: 0;
     white-space: nowrap;
+    overflow: hidden;   /* صمام أمان: لا يتسرّب أي نص خارج حدود الدائرة */
 }
 
 .apt3d-chip-label { display: none; }

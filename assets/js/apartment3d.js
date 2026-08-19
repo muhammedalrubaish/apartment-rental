@@ -713,7 +713,16 @@ function buildChips(rooms) {
         b.type = 'button';
         b.className = 'apt3d-chip';
         b.dataset.room = r.key;
-        b.textContent = ((ROOM_INFO[r.type] || {}).icon || '📐') + ' ' + r.name;
+        b.title = r.name;
+        b.setAttribute('aria-label', r.name);
+
+        // الأيقونة وحدها هي الظاهرة؛ الاسم يبقى في عنصر مخفي لقارئات الشاشة
+        b.append(((ROOM_INFO[r.type] || {}).icon || '📐') + ' ');
+        const label = document.createElement('span');
+        label.className = 'apt3d-chip-label';
+        label.textContent = r.name;
+        b.appendChild(label);
+
         zone.appendChild(b);
     });
     extras.forEach((e) => zone.appendChild(e));
