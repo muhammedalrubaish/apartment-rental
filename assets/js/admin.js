@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    const STORE_KEY = 'rhsa_admin_v2';
+    const STORE_KEY = 'rhsa_admin_v3';
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -239,13 +239,8 @@
             { id: uid(), name: 'سارة القحطاني', phone: '0509876543', email: '', source: 'airbnb', createdAt: M(-8), note: '' },
         ];
 
-        const now = Date.now();
-        const H = (h) => new Date(now - h * 3600000).toISOString();
-
-        const notifications = [
-            { id: uid(), type: 'bill', title: 'فاتورة الكهرباء تستحق قريباً', body: `مبلغ 420 ر.س — الاستحقاق ${M(3)}`, at: H(5), read: false },
-            { id: uid(), type: 'bill', title: 'اشتراك الإنترنت', body: 'تجديد اشتراك STC بمبلغ 299 ر.س', at: H(20), read: true },
-        ];
+        // الإشعارات التجريبية أُزيلت — تبدأ فارغة وتتولّد فعلياً من أحداث حقيقية (حجز، رسالة...)
+        const notifications = [];
 
         return {
             settings: {
