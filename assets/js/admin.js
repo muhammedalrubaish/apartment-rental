@@ -258,6 +258,7 @@
     let calCursor = new Date();
     let notifFilter = 'all';
     let chartMonths = 6;
+    let billsExpanded = false;
 
     function load() {
         try {
@@ -529,11 +530,22 @@
         }).join('');
     }
 
+    const BILLS_PREVIEW = 7;
+
     function renderBills() {
-        const rows = state.expenses.slice().sort((a, b) => {
+        const sorted = state.expenses.slice().sort((a, b) => {
             if (a.status !== b.status) return a.status === 'due' ? -1 : 1;
             return (a.dueDate || '').localeCompare(b.dueDate || '');
-        }).slice(0, 7);
+        });
+
+        // زر «عرض الكل» حتى تبقى كل المصاريف قابلة للتعديل والحذف لا أول سبعة فقط
+        const allBtn = $('#btn-bills-all');
+        if (allBtn) {
+            allBtn.hidden = sorted.length <= BILLS_PREVIEW;
+            allBtn.textContent = billsExpanded ? 'عرض أقل' : `عرض الكل (${sorted.length})`;
+        }
+
+        const rows = billsExpanded ? sorted : sorted.slice(0, BILLS_PREVIEW);
 
         if (!rows.length) {
             $('#tbl-bills').innerHTML = `<tr><td colspan="5">${emptyBox('🧾', 'لا فواتير', 'أضف مصروفاً لتتبعه')}</td></tr>`;
@@ -551,7 +563,12 @@
                 <td class="num dim">${fmtDate(e.dueDate || e.date)}</td>
                 <td class="num">${money(e.amount)}</td>
                 <td>${tag}</td>
-                <td>${e.status === 'due' ? `<button class="btn btn-ghost btn-sm" data-pay="${e.id}">تسديد</button>` : ''}</td>
+                <td>
+                    <div style="display:flex;gap:6px;justify-content:flex-end">
+                        ${e.status === 'due' ? `<button class="btn btn-ghost btn-sm" data-pay="${e.id}">تسديد</button>` : ''}
+                        <button class="btn btn-ghost btn-sm" data-edit-exp="${e.id}" title="تعديل أو حذف">تعديل</button>
+                    </div>
+                </td>
             </tr>`;
         }).join('');
 
@@ -564,6 +581,13 @@
                 save();
                 renderDashboard();
                 toast('تم تعليم الفاتورة كمسددة');
+            });
+        });
+
+        $$('[data-edit-exp]', $('#tbl-bills')).forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const e = state.expenses.find((x) => x.id === btn.dataset.editExp);
+                if (e) openExpenseForm(e);
             });
         });
     }
@@ -1554,46 +1578,80 @@
         });
     }
 
-    function openExpenseForm() {
-        openModal('إضافة مصروف', `
+    function openExpenseForm(e) {
+        const isNew = !e;
+        e = e || {};
+
+        openModal(isNew ? 'إضافة مصروف' : 'تعديل المصروف', `
             <div class="form-row">
                 <div class="field"><label>البند</label><select class="input" id="e-cat">
                     ${EXPENSE_CATEGORIES.map((c) => `<option>${c}</option>`).join('')}
                 </select></div>
-                <div class="field"><label>المبلغ</label><input type="number" class="input" id="e-amt" placeholder="0"></div>
+                <div class="field"><label>المبلغ</label><input type="number" class="input" id="e-amt" placeholder="0" value="${e.amount || ''}"></div>
             </div>
             <div class="form-row">
-                <div class="field"><label>تاريخ التسجيل</label><input type="date" class="input" id="e-date" value="${todayISO()}"></div>
-                <div class="field"><label>تاريخ الاستحقاق</label><input type="date" class="input" id="e-due" value="${addDays(todayISO(), 7)}"></div>
+                <div class="field"><label>تاريخ التسجيل</label><input type="date" class="input" id="e-date" value="${e.date || todayISO()}"></div>
+                <div class="field"><label>تاريخ الاستحقاق</label><input type="date" class="input" id="e-due" value="${e.dueDate || addDays(todayISO(), 7)}"></div>
             </div>
             <div class="field"><label>الحالة</label><select class="input" id="e-status">
                 <option value="due">مستحق</option><option value="paid">مسدد</option>
             </select></div>
-            <div class="field"><label>ملاحظات</label><input class="input" id="e-note" placeholder="اختياري"></div>`,
-            `<button class="btn btn-ghost" id="e-cancel">إلغاء</button>
+            <div class="field"><label>ملاحظات</label><input class="input" id="e-note" placeholder="اختياري" value="${escapeHtml(e.note || '')}"></div>`,
+            `${isNew ? '' : '<button class="btn btn-ghost" id="e-del" style="color:var(--danger)">حذف</button>'}
+             <button class="btn btn-ghost" id="e-cancel">إلغاء</button>
              <button class="btn btn-primary" id="e-save">حفظ</button>`);
 
+        // بند المصروف قد يكون خارج القائمة المعتمدة (مثل بند قديم) — أضفه حتى لا يُستبدل صامتاً
+        if (!isNew && e.category && !EXPENSE_CATEGORIES.includes(e.category)) {
+            $('#e-cat').insertAdjacentHTML('beforeend', `<option>${escapeHtml(e.category)}</option>`);
+        }
+        if (e.category) $('#e-cat').value = e.category;
+        if (e.status) $('#e-status').value = e.status;
+
         $('#e-cancel').addEventListener('click', closeModal);
+
+        if (!isNew) {
+            $('#e-del').addEventListener('click', () => {
+                if (!confirm(`حذف مصروف «${e.category}» بمبلغ ${money(e.amount)}؟`)) return;
+                state.expenses = state.expenses.filter((x) => x.id !== e.id);
+                save();
+                closeModal();
+                toast('تم حذف المصروف');
+                renderDashboard();
+                updateBadges();
+            });
+        }
+
         $('#e-save').addEventListener('click', () => {
             const amt = Number($('#e-amt').value);
             if (!amt || amt <= 0) return toast('أدخل مبلغاً صحيحاً', true);
 
-            state.expenses.push({
-                id: uid(), propertyId: state.properties[0]?.id || 'p1',
+            const status = $('#e-status').value;
+            const data = {
                 category: $('#e-cat').value, amount: amt,
                 date: $('#e-date').value || todayISO(),
                 dueDate: $('#e-due').value || todayISO(),
-                status: $('#e-status').value,
+                status,
                 note: $('#e-note').value.trim(),
-            });
+            };
 
-            if ($('#e-status').value === 'due') {
-                pushNotification('bill', 'مصروف مستحق', `${$('#e-cat').value} — ${money(amt)}`);
+            if (isNew) {
+                state.expenses.push(Object.assign({
+                    id: uid(), propertyId: state.properties[0]?.id || 'p1',
+                }, data));
+                // الإشعار للمصاريف المستحقة الجديدة فقط، حتى لا يتكرر عند كل تعديل
+                if (status === 'due') {
+                    pushNotification('bill', 'مصروف مستحق', `${data.category} — ${money(amt)}`);
+                }
+            } else {
+                const target = state.expenses.find((x) => x.id === e.id);
+                if (!target) { closeModal(); return toast('المصروف لم يعد موجوداً', true); }
+                Object.assign(target, data);
             }
 
             save();
             closeModal();
-            toast('تمت إضافة المصروف');
+            toast(isNew ? 'تمت إضافة المصروف' : 'تم حفظ التعديل');
             renderDashboard();
             updateBadges();
         });
@@ -1797,7 +1855,13 @@
 
         $('#btn-bell').addEventListener('click', () => go('notifications'));
         $('#btn-new-booking').addEventListener('click', () => openBookingForm());
-        $('#btn-add-expense').addEventListener('click', openExpenseForm);
+        // بلا تمرير مباشر: الدالة تستقبل مصروفاً للتعديل، وكائن الحدث سيبدو كأنه مصروف
+        $('#btn-add-expense').addEventListener('click', () => openExpenseForm());
+
+        $('#btn-bills-all').addEventListener('click', () => {
+            billsExpanded = !billsExpanded;
+            renderBills();
+        });
         $('#btn-add-contact').addEventListener('click', openContactForm);
         $('#btn-add-prop').addEventListener('click', () => openPropertyForm(null));
         $('#contact-search').addEventListener('input', renderContacts);
