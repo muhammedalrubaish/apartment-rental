@@ -232,12 +232,8 @@
             }
         });
 
-        const contacts = [
-            { id: uid(), name: 'فهد العتيبي', phone: '0533221144', email: '', source: 'direct', createdAt: M(-3), note: 'حجز من الموقع مباشرة' },
-            { id: uid(), name: 'نورة الشمري', phone: '0567788990', email: '', source: 'gathern', createdAt: M(-6), note: '' },
-            { id: uid(), name: 'عبدالله الحربي', phone: '0551234567', email: '', source: 'gathern', createdAt: M(-14), note: 'ضيف متكرر' },
-            { id: uid(), name: 'سارة القحطاني', phone: '0509876543', email: '', source: 'airbnb', createdAt: M(-8), note: '' },
-        ];
+        // جهات الاتصال لم تعد بيانات تجريبية — تُحمَّل من جدول contacts في Supabase (انظر loadContacts)
+        const contacts = [];
 
         // الإشعارات التجريبية أُزيلت — تبدأ فارغة وتتولّد فعلياً من أحداث حقيقية (حجز، رسالة...)
         const notifications = [];
@@ -888,6 +884,63 @@
         return true;
     }
 
+    /* ---------------------------------------------------------------------
+       جدول جهات الاتصال الحقيقي في Supabase (public.contacts)
+       --------------------------------------------------------------------- */
+    function contactFromRow(r) {
+        return {
+            id: r.id, name: r.name, phone: r.phone || '', email: r.email || '',
+            source: r.source, note: r.note || '',
+            createdAt: r.created_at ? r.created_at.slice(0, 10) : todayISO(),
+        };
+    }
+
+    function contactToRow(c) {
+        return {
+            name: c.name, phone: c.phone || '', email: c.email || '',
+            source: c.source, note: c.note || '',
+        };
+    }
+
+    async function loadContacts() {
+        const client = sbc();
+        if (!client) return;
+
+        const { data, error } = await client
+            .from('contacts')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) { console.error('[contacts] فشل تحميل جهات الاتصال:', error); return; }
+
+        state.contacts = (data || []).map(contactFromRow);
+        save();
+        renderView(currentView());
+
+        // المحادثات قد تكون وصلت قبل جهات الاتصال — أعد المزامنة بعد التحميل
+        if (msg.loaded) syncContactsFromConversations();
+    }
+
+    async function createContact(contact) {
+        const client = sbc();
+        if (!client) { toast('تعذّر الاتصال بقاعدة البيانات', true); return null; }
+
+        const { data, error } = await client
+            .from('contacts')
+            .insert(contactToRow(contact))
+            .select()
+            .single();
+
+        if (error) {
+            // 23505 = تكرار الجوال؛ ليست خطأً فعلياً عند المزامنة التلقائية
+            if (error.code === '23505') return null;
+            console.error('[contacts] فشل حفظ جهة الاتصال:', error);
+            toast('تعذّر حفظ جهة الاتصال', true);
+            return null;
+        }
+        return contactFromRow(data);
+    }
+
     async function loadConversations() {
         const client = sbc();
         if (!client) return;
@@ -906,25 +959,25 @@
     }
 
     /* حفظ معلومات تسجيل دخول الزائر للمحادثة كجهة اتصال — تلقائياً وبلا تكرار */
-    function syncContactsFromConversations() {
+    async function syncContactsFromConversations() {
         let added = 0;
 
-        msg.conversations.forEach((c) => {
-            if (!c.visitor_phone || !c.visitor_name) return;
-            const exists = state.contacts.some((x) => x.phone === c.visitor_phone);
-            if (exists) return;
+        for (const c of msg.conversations) {
+            if (!c.visitor_phone || !c.visitor_name) continue;
+            if (state.contacts.some((x) => x.phone === c.visitor_phone)) continue;
 
-            state.contacts.push({
-                id: uid(),
+            const contact = await createContact({
                 name: c.visitor_name,
                 phone: c.visitor_phone,
                 email: '',
                 source: 'site_chat',
-                createdAt: c.created_at ? c.created_at.slice(0, 10) : todayISO(),
                 note: 'سجّل بيانات الدخول عبر المحادثة المباشرة في الموقع',
             });
+            if (!contact) continue;      // موجودة مسبقاً أو تعذّر الحفظ
+
+            state.contacts.push(contact);
             added++;
-        });
+        }
 
         if (added) {
             save();
@@ -1449,7 +1502,10 @@
 
             // إنشاء جهة اتصال تلقائياً إن لم تكن موجودة
             if (phone && !state.contacts.some((c) => c.phone === phone)) {
-                state.contacts.push({ id: uid(), name: guest, phone, email: '', source, createdAt: todayISO(), note: 'أُضيف تلقائياً من حجز' });
+                const contact = await createContact({
+                    name: guest, phone, email: '', source, note: 'أُضيف تلقائياً من حجز',
+                });
+                if (contact) state.contacts.push(contact);
             }
 
             if (source !== 'block') {
@@ -1561,19 +1617,29 @@
              <button class="btn btn-primary" id="c-save">حفظ</button>`);
 
         $('#c-cancel').addEventListener('click', closeModal);
-        $('#c-save').addEventListener('click', () => {
+        $('#c-save').addEventListener('click', async () => {
             const name = $('#c-name').value.trim();
             if (!name) return toast('أدخل الاسم', true);
 
-            state.contacts.push({
-                id: uid(), name,
-                phone: $('#c-phone').value.trim(),
+            const phone = $('#c-phone').value.trim();
+            if (phone && state.contacts.some((x) => x.phone === phone)) {
+                return toast('هذا الجوال مسجّل مسبقاً', true);
+            }
+
+            const saveBtn = $('#c-save');
+            saveBtn.disabled = true;
+
+            const contact = await createContact({
+                name, phone,
                 email: $('#c-email').value.trim(),
                 source: $('#c-source').value,
-                createdAt: todayISO(),
                 note: $('#c-note').value.trim(),
             });
 
+            saveBtn.disabled = false;
+            if (!contact) return;
+
+            state.contacts.push(contact);
             save();
             closeModal();
             toast('تمت إضافة جهة الاتصال');
@@ -1870,18 +1936,22 @@
     /* ---------------------------------------------------------------------
        15. الإقلاع
        --------------------------------------------------------------------- */
-    function start() {
+    async function start() {
         save();            // ثبّت البيانات الأولية عند أول فتح
         applyTheme();
         applyLang();
         bind();
         updateBadges();
-        loadConversations();       // لتحديث شارة الرسائل حتى قبل فتح القسم
-        startMessagesRealtime();   // بث لحظي: رسائل الزوار الجديدة تصل بلا تحديث
-        loadBookings();            // تحميل الحجوزات الحقيقية من Supabase
-
+        // اعرض الواجهة فوراً، ثم تُحدَّث تلقائياً حالما تصل البيانات من الخادم
         const hash = location.hash.replace('#', '');
         go(PAGE_META[hash] ? hash : 'dashboard');
+
+        loadBookings();            // تحميل الحجوزات الحقيقية من Supabase
+        startMessagesRealtime();   // بث لحظي: رسائل الزوار الجديدة تصل بلا تحديث
+
+        // جهات الاتصال أولاً، حتى تتم مقارنة التكرار قبل مزامنتها من المحادثات
+        await loadContacts();
+        loadConversations();       // لتحديث شارة الرسائل حتى قبل فتح القسم
     }
 
     if (document.readyState === 'loading') {
