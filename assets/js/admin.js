@@ -186,12 +186,6 @@
        2. البيانات الأولية
        --------------------------------------------------------------------- */
     function seed() {
-        const t = new Date();
-        const M = (offset) => {
-            const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() + offset);
-            return iso(d);
-        };
-
         const properties = [
             {
                 id: 'p1', name: 'شقة السليمانية — RHSA7905', city: 'الرياض', district: 'حي السليمانية',
@@ -205,32 +199,8 @@
         // الحجوزات لم تعد بيانات تجريبية — تُحمَّل من جدول bookings في Supabase (انظر loadBookings)
         const bookings = [];
 
-        // المصاريف التشغيلية بالأسعار الفعلية من لوحة تحصيل الديون
+        // المصاريف لم تعد بيانات تجريبية — تُحمَّل من جدول expenses في Supabase (انظر loadExpenses)
         const expenses = [];
-        const addExp = (cat, amount, dayOffset, status, note, dueOffset) => expenses.push({
-            id: uid(), propertyId: 'p1', category: cat, amount,
-            date: M(dayOffset), dueDate: M(dueOffset === undefined ? dayOffset : dueOffset),
-            status, note: note || '',
-        });
-
-        // المصاريف الشهرية الثابتة — الشهر الحالي والشهران السابقان
-        [0, 1, 2].forEach((back) => {
-            const d = -back * 30;
-            const paid = back > 0 ? 'paid' : 'due';
-            addExp('تنظيف', RATES.cleaning, d - 5, 'paid', 'زيارات تنظيف بعد كل مغادرة');
-            addExp('كهرباء', RATES.power, d - 8, paid, 'فاتورة الكهرباء الشهرية', back === 0 ? 3 : d - 8);
-            addExp('إنترنت', RATES.internet, d - 10, paid, 'حصتي من اشتراك الإنترنت', back === 0 ? 6 : d - 10);
-        });
-
-        // عمولة المنصات — تُحسب من الحجوزات المنتهية بنفس معادلة لوحة التحصيل
-        bookings.filter((b) => b.status === 'completed' && b.source !== 'direct').forEach((b) => {
-            const n = nightsBetween(b.checkin, b.checkout);
-            const fee = bookingFee(b.total, n);
-            if (fee > 0) {
-                addExp('عمولة منصات', fee, 0, 'paid',
-                    `${b.guest} — ${n} ليالٍ عبر ${b.source === 'airbnb' ? 'Airbnb' : 'جاذر إن'}`);
-            }
-        });
 
         // جهات الاتصال لم تعد بيانات تجريبية — تُحمَّل من جدول contacts في Supabase (انظر loadContacts)
         const contacts = [];
@@ -573,10 +543,16 @@
         }).join('');
 
         $$('[data-pay]', $('#tbl-bills')).forEach((btn) => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const e = state.expenses.find((x) => x.id === btn.dataset.pay);
                 if (!e) return;
-                e.status = 'paid';
+
+                btn.disabled = true;
+                const updated = await updateExpense(e.id, Object.assign({}, e, { status: 'paid' }));
+                btn.disabled = false;
+                if (!updated) return;
+
+                Object.assign(e, updated);
                 pushNotification('bill', 'تم تسديد فاتورة', `${e.category} — ${money(e.amount)}`);
                 save();
                 renderDashboard();
@@ -963,6 +939,80 @@
             return null;
         }
         return contactFromRow(data);
+    }
+
+    /* ---------------------------------------------------------------------
+       جدول المصاريف الحقيقي في Supabase (public.expenses)
+       --------------------------------------------------------------------- */
+    function expenseFromRow(r) {
+        return {
+            id: r.id, propertyId: r.property_id, category: r.category,
+            amount: Number(r.amount) || 0, date: r.date, dueDate: r.due_date,
+            status: r.status, note: r.note || '',
+        };
+    }
+
+    function expenseToRow(e) {
+        return {
+            property_id: e.propertyId || 'p1', category: e.category,
+            amount: e.amount || 0, date: e.date, due_date: e.dueDate,
+            status: e.status, note: e.note || '',
+        };
+    }
+
+    async function loadExpenses() {
+        const client = sbc();
+        if (!client) return;
+
+        const { data, error } = await client
+            .from('expenses')
+            .select('*')
+            .order('due_date', { ascending: true });
+
+        if (error) { console.error('[expenses] فشل تحميل المصاريف:', error); return; }
+
+        state.expenses = (data || []).map(expenseFromRow);
+        save();
+        renderView(currentView());
+        updateBadges();
+    }
+
+    async function createExpense(expense) {
+        const client = sbc();
+        if (!client) { toast('تعذّر الاتصال بقاعدة البيانات', true); return null; }
+
+        const { data, error } = await client
+            .from('expenses')
+            .insert(expenseToRow(expense))
+            .select()
+            .single();
+
+        if (error) { console.error('[expenses] فشل حفظ المصروف:', error); toast('تعذّر حفظ المصروف', true); return null; }
+        return expenseFromRow(data);
+    }
+
+    async function updateExpense(id, patch) {
+        const client = sbc();
+        if (!client) { toast('تعذّر الاتصال بقاعدة البيانات', true); return null; }
+
+        const { data, error } = await client
+            .from('expenses')
+            .update(expenseToRow(patch))
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) { console.error('[expenses] فشل تعديل المصروف:', error); toast('تعذّر تعديل المصروف', true); return null; }
+        return expenseFromRow(data);
+    }
+
+    async function deleteExpense(id) {
+        const client = sbc();
+        if (!client) { toast('تعذّر الاتصال بقاعدة البيانات', true); return false; }
+
+        const { error } = await client.from('expenses').delete().eq('id', id);
+        if (error) { console.error('[expenses] فشل حذف المصروف:', error); toast('تعذّر حذف المصروف', true); return false; }
+        return true;
     }
 
     async function loadConversations() {
@@ -1540,11 +1590,12 @@
             if (source === 'gathern' || source === 'airbnb') {
                 const fee = bookingFee(booking.total, nightsBetween(ci, co));
                 if (fee > 0) {
-                    state.expenses.push({
-                        id: uid(), propertyId: booking.propertyId, category: 'عمولة منصات',
+                    const expense = await createExpense({
+                        propertyId: booking.propertyId, category: 'عمولة منصات',
                         amount: fee, date: todayISO(), dueDate: todayISO(), status: 'due',
                         note: `${guest} — ${SOURCE_LABEL[source]}`,
                     });
+                    if (expense) state.expenses.push(expense);
                 }
             }
 
@@ -1611,8 +1662,14 @@
         $('#e-cancel').addEventListener('click', closeModal);
 
         if (!isNew) {
-            $('#e-del').addEventListener('click', () => {
+            $('#e-del').addEventListener('click', async () => {
                 if (!confirm(`حذف مصروف «${e.category}» بمبلغ ${money(e.amount)}؟`)) return;
+                const delBtn = $('#e-del');
+                delBtn.disabled = true;
+                const ok = await deleteExpense(e.id);
+                delBtn.disabled = false;
+                if (!ok) return;
+
                 state.expenses = state.expenses.filter((x) => x.id !== e.id);
                 save();
                 closeModal();
@@ -1622,12 +1679,13 @@
             });
         }
 
-        $('#e-save').addEventListener('click', () => {
+        $('#e-save').addEventListener('click', async () => {
             const amt = Number($('#e-amt').value);
             if (!amt || amt <= 0) return toast('أدخل مبلغاً صحيحاً', true);
 
             const status = $('#e-status').value;
             const data = {
+                propertyId: e.propertyId || state.properties[0]?.id || 'p1',
                 category: $('#e-cat').value, amount: amt,
                 date: $('#e-date').value || todayISO(),
                 dueDate: $('#e-due').value || todayISO(),
@@ -1635,18 +1693,27 @@
                 note: $('#e-note').value.trim(),
             };
 
+            const saveBtn = $('#e-save');
+            saveBtn.disabled = true;
+
             if (isNew) {
-                state.expenses.push(Object.assign({
-                    id: uid(), propertyId: state.properties[0]?.id || 'p1',
-                }, data));
+                const created = await createExpense(data);
+                saveBtn.disabled = false;
+                if (!created) return;
+
+                state.expenses.push(created);
                 // الإشعار للمصاريف المستحقة الجديدة فقط، حتى لا يتكرر عند كل تعديل
                 if (status === 'due') {
                     pushNotification('bill', 'مصروف مستحق', `${data.category} — ${money(amt)}`);
                 }
             } else {
-                const target = state.expenses.find((x) => x.id === e.id);
-                if (!target) { closeModal(); return toast('المصروف لم يعد موجوداً', true); }
-                Object.assign(target, data);
+                const updated = await updateExpense(e.id, data);
+                saveBtn.disabled = false;
+                if (!updated) return;
+
+                const i = state.expenses.findIndex((x) => x.id === e.id);
+                if (i === -1) { closeModal(); return toast('المصروف لم يعد موجوداً', true); }
+                state.expenses[i] = updated;
             }
 
             save();
@@ -2011,6 +2078,7 @@
         go(PAGE_META[hash] ? hash : 'dashboard');
 
         loadBookings();            // تحميل الحجوزات الحقيقية من Supabase
+        loadExpenses();            // تحميل المصاريف الحقيقية من Supabase
         startMessagesRealtime();   // بث لحظي: رسائل الزوار الجديدة تصل بلا تحديث
 
         // جهات الاتصال أولاً، حتى تتم مقارنة التكرار قبل مزامنتها من المحادثات
