@@ -108,21 +108,19 @@
         cleaning: 500,       // النظافة شهرياً
         power: 130,          // الكهرباء شهرياً
         internet: 70,        // الإنترنت — حصتي شهرياً
-        feeBase: 14.38,      // ثابت عمولة المنصات
-        feeRate: 0.0692,     // نسبة عمولة المنصات
-        feeCap: 50,          // الحد الأقصى للعمولة عن الليلة
     };
 
-    /* عمولة المنصة عن الليلة الواحدة (نفس معادلة لوحة التحصيل) */
-    function platformFee(nightPrice) {
-        if (nightPrice <= 0) return 0;
-        return Math.min(RATES.feeBase + RATES.feeRate * nightPrice, RATES.feeCap);
-    }
+    /* نسبة عمولة كل منصة من إجمالي الحجز — الحجز المباشر بلا عمولة */
+    const PLATFORM_FEE_RATES = {
+        airbnb: 0.18,        // Airbnb ≈ 18%
+        gathern: 0.16,       // جاذر إن 16%
+    };
 
-    /* عمولة حجز كامل */
-    function bookingFee(total, nights) {
-        if (!nights || total <= 0) return 0;
-        return Math.round(platformFee(total / nights) * nights);
+    /* عمولة حجز كامل حسب منصة الحجز */
+    function bookingFee(total, source) {
+        const rate = PLATFORM_FEE_RATES[source];
+        if (!rate || total <= 0) return 0;
+        return Math.round(total * rate);
     }
 
     /* بنود المصاريف المعتمدة */
@@ -222,10 +220,10 @@
             addExp('إنترنت', RATES.internet, d - 10, paid, 'حصتي من اشتراك الإنترنت', back === 0 ? 6 : d - 10);
         });
 
-        // عمولة المنصات — تُحسب من الحجوزات المنتهية بنفس معادلة لوحة التحصيل
+        // عمولة المنصات — تُحسب من الحجوزات المنتهية بنسبة كل منصة
         bookings.filter((b) => b.status === 'completed' && b.source !== 'direct').forEach((b) => {
             const n = nightsBetween(b.checkin, b.checkout);
-            const fee = bookingFee(b.total, n);
+            const fee = bookingFee(b.total, b.source);
             if (fee > 0) {
                 addExp('عمولة منصات', fee, 0, 'paid',
                     `${b.guest} — ${n} ليالٍ عبر ${b.source === 'airbnb' ? 'Airbnb' : 'جاذر إن'}`);
@@ -575,7 +573,7 @@
             { icon: '🧹', label: 'النظافة', value: money(RATES.cleaning), note: `شهرياً • ${cleaningDue} زيارة قادمة` },
             { icon: '⚡', label: 'الكهرباء', value: money(RATES.power), note: 'ثابت شهرياً' },
             { icon: '📶', label: 'الإنترنت', value: money(RATES.internet), note: 'حصتي من الاشتراك شهرياً' },
-            { icon: '🧾', label: 'عمولة المنصات', value: money(state.expenses.filter((e) => e.category === 'عمولة منصات').reduce((a, e) => a + Number(e.amount || 0), 0)), note: `${RATES.feeBase} + ${(RATES.feeRate * 100).toFixed(2)}% لكل ليلة (بحد ${RATES.feeCap})` },
+            { icon: '🧾', label: 'عمولة المنصات', value: money(state.expenses.filter((e) => e.category === 'عمولة منصات').reduce((a, e) => a + Number(e.amount || 0), 0)), note: `Airbnb ${PLATFORM_FEE_RATES.airbnb * 100}% • جاذر إن ${PLATFORM_FEE_RATES.gathern * 100}%` },
             { icon: '🔑', label: 'الوحدات النشطة', value: state.properties.filter((p) => p.status === 'active').length, note: 'من أصل ' + state.properties.length },
             { icon: '👥', label: 'إجمالي الزبائن', value: state.contacts.length, note: 'من الموقع والمنصات' },
         ];
@@ -1512,16 +1510,14 @@
                 pushNotification('booking', 'حجز جديد مؤكد', `${guest} — ${nightsBetween(ci, co)} ليالٍ عبر ${SOURCE_LABEL[source] || source}`);
             }
 
-            // عمولة المنصات تُسجَّل تلقائياً للحجوزات غير المباشرة
-            if (source === 'gathern' || source === 'airbnb') {
-                const fee = bookingFee(booking.total, nightsBetween(ci, co));
-                if (fee > 0) {
-                    state.expenses.push({
-                        id: uid(), propertyId: booking.propertyId, category: 'عمولة منصات',
-                        amount: fee, date: todayISO(), dueDate: todayISO(), status: 'due',
-                        note: `${guest} — ${SOURCE_LABEL[source]}`,
-                    });
-                }
+            // عمولة المنصات تُسجَّل تلقائياً — النسبة تحددها PLATFORM_FEE_RATES وحدها
+            const fee = bookingFee(booking.total, source);
+            if (fee > 0) {
+                state.expenses.push({
+                    id: uid(), propertyId: booking.propertyId, category: 'عمولة منصات',
+                    amount: fee, date: todayISO(), dueDate: todayISO(), status: 'due',
+                    note: `${guest} — ${SOURCE_LABEL[source]}`,
+                });
             }
 
             save();
