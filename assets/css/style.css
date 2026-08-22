@@ -21,6 +21,14 @@
     --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
     --radius: 16px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ألواح زجاجية (Glassmorphism) — أسطح شبه شفافة فوق خلفية متدرجة */
+    --glass-bg: rgba(255, 255, 255, 0.62);
+    --glass-bg-strong: rgba(255, 255, 255, 0.78);
+    --glass-bg-soft: rgba(255, 255, 255, 0.38);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --glass-blur: saturate(180%) blur(18px);
+    --glass-shadow: 0 8px 32px rgba(31, 38, 60, 0.12);
 }
 
 /* Reset & Fonts */
@@ -32,7 +40,7 @@
 
 body {
     font-family: 'Cairo', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-soft);
+    background-color: #f4f6fa;
     color: var(--text-main);
     direction: rtl;
     text-align: right;
@@ -40,13 +48,41 @@ body {
     overflow-x: hidden;
 }
 
+/* خلفية متدرجة ثابتة تعطي الألواح الزجاجية عمقاً عند التمرير */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(50rem 32rem at 88% -6%, rgba(242, 98, 42, 0.28), transparent 62%),
+        radial-gradient(42rem 30rem at 4% 8%, rgba(249, 168, 90, 0.24), transparent 60%),
+        radial-gradient(46rem 34rem at 78% 92%, rgba(216, 82, 28, 0.2), transparent 62%),
+        radial-gradient(38rem 28rem at 12% 96%, rgba(253, 186, 116, 0.22), transparent 60%),
+        linear-gradient(165deg, #fff7f2 0%, #f4f6fa 48%, #fdf2ec 100%);
+}
+
+/* متصفحات لا تدعم backdrop-filter: أسطح معتمة بدل الشفافة حفاظاً على وضوح النص */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.94);
+        --glass-bg-strong: rgba(255, 255, 255, 0.97);
+        --glass-bg-soft: rgba(255, 255, 255, 0.88);
+        --glass-border: #e2e6ec;
+    }
+}
+
 /* Header & Navigation */
 .navbar {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, rgba(242, 98, 42, 0.82), rgba(216, 82, 28, 0.82));
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 4px 18px rgba(242, 98, 42, 0.25);
+    box-shadow: 0 4px 24px rgba(242, 98, 42, 0.22);
     padding: calc(14px + env(safe-area-inset-top, 0px)) 0 14px;
 }
 
@@ -166,12 +202,14 @@ body {
 
 /* Hero Title Section */
 .hero-header {
-    background: #ffffff;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     border-radius: var(--radius);
     padding: 32px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--glass-shadow);
     margin-bottom: 24px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--glass-border);
     position: relative;
     overflow: hidden;
 }
@@ -198,8 +236,10 @@ body {
 }
 
 .hero-badge {
-    background: var(--primary-light);
-    border: 1px solid var(--primary);
+    background: rgba(253, 238, 231, 0.6);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(242, 98, 42, 0.55);
     padding: 8px 16px;
     border-radius: 20px;
     font-size: 13px;
@@ -238,16 +278,18 @@ body {
 }
 
 .title-card {
-    background: var(--bg-soft);
-    border: 1px solid var(--border);
+    background: var(--glass-bg-soft);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 18px 20px;
     transition: var(--transition);
 }
 
 .title-card.active {
-    border-color: var(--primary);
-    background: var(--primary-light);
+    border-color: rgba(242, 98, 42, 0.5);
+    background: rgba(253, 238, 231, 0.66);
 }
 
 .title-platform-badge {
@@ -270,7 +312,10 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    background: rgba(2, 132, 199, 0.05);
+    background: var(--glass-bg-soft);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
     padding: 16px 20px;
     border-radius: 12px;
     margin-top: 20px;
@@ -310,7 +355,8 @@ body {
     border-radius: var(--radius);
     overflow: hidden;
     height: 460px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
 }
 
 /* الصورة الرئيسية تشغل عمودها كاملاً */
@@ -462,8 +508,10 @@ body.lightbox-open { overflow: hidden; }
 }
 
 .spec-box {
-    background: #ffffff;
-    border: 1px solid var(--border);
+    background: var(--glass-bg-soft);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 16px;
     text-align: center;
@@ -489,20 +537,22 @@ body.lightbox-open { overflow: hidden; }
 
 /* Description Section */
 .card-section {
-    background: #ffffff;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     border-radius: var(--radius);
     padding: 28px;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--border);
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
     margin-bottom: 24px;
 }
 
 .amenities-section {
-    background: linear-gradient(135deg, var(--primary-light), #ffffff 60%);
+    background: linear-gradient(135deg, rgba(253, 238, 231, 0.72), rgba(255, 255, 255, 0.58) 60%);
 }
 
 .amenities-section .amenity-card {
-    background: #ffffff;
+    background: var(--glass-bg-strong);
 }
 
 .card-title {
@@ -539,15 +589,17 @@ body.lightbox-open { overflow: hidden; }
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    background: var(--bg-soft);
+    background: var(--glass-bg-soft);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     padding: 16px;
     border-radius: 12px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--glass-border);
 }
 
 .amenity-icon {
     font-size: 26px;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.85);
     width: 44px;
     height: 44px;
     border-radius: 10px;
@@ -571,11 +623,13 @@ body.lightbox-open { overflow: hidden; }
 
 /* Booking Widget Card */
 .booking-widget {
-    background: #ffffff;
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     border-radius: var(--radius);
     padding: 28px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border);
+    box-shadow: var(--glass-shadow);
+    border: 1px solid var(--glass-border);
     position: sticky;
     top: 90px;
 }
@@ -620,10 +674,12 @@ body.lightbox-open { overflow: hidden; }
 .form-control {
     padding: 12px 14px;
     border-radius: 10px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--glass-border);
     font-family: inherit;
     font-size: 14px;
-    background: var(--bg-soft);
+    background: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     color: var(--text-main);
     width: 100%;
 }
@@ -647,7 +703,10 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
 }
 
 .calc-summary {
-    background: var(--primary-light);
+    background: rgba(253, 238, 231, 0.68);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
     border-radius: 10px;
     padding: 16px;
     margin: 10px 0;
@@ -678,10 +737,12 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
 }
 
 .platform-card {
-    background: #ffffff;
+    background: var(--glass-bg-soft);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: 14px;
     padding: 20px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
@@ -731,8 +792,11 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
 
 /* Footer */
 .site-footer {
-    background: var(--bg-dark);
-    color: #94a3b8;
+    background: rgba(27, 31, 36, 0.82);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
     padding: 40px 0 20px;
     margin-top: 60px;
     text-align: center;
@@ -756,7 +820,10 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     position: fixed;
     bottom: 24px;
     left: 24px;
-    background: linear-gradient(135deg, #25D366, #128C7E);
+    background: linear-gradient(135deg, rgba(37, 211, 102, 0.88), rgba(18, 140, 126, 0.88));
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
     width: 60px;
     height: 60px;
@@ -1466,8 +1533,10 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
 
 .verify-badge {
     display: inline-block;
-    background: #ffffff;
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.66);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 12px;
@@ -1517,8 +1586,10 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     font-size: 15px;
     font-weight: 700;
     color: var(--primary-dark);
-    background: var(--primary-light);
-    border: 1px solid #bae6fd;
+    background: rgba(253, 238, 231, 0.6);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(242, 98, 42, 0.35);
     border-radius: 50%;
     width: 36px;
     height: 36px;
@@ -1545,8 +1616,8 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
 
 .apt3d-chip.alt {
     color: #475569;
-    background: #f1f5f9;
-    border-color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.55);
+    border-color: var(--glass-border);
 }
 
 /* على الشاشات الضيقة: توزيع متساوٍ حتى يظهر الشريط كاملاً بسطر واحد دون تمرير */
@@ -1563,8 +1634,10 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     min-height: 280px;
     border-radius: 16px;
     overflow: hidden;
-    background: linear-gradient(160deg, #eef2f7, #dbe4ee);
-    border: 1px solid #e2e8f0;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.5), rgba(219, 228, 238, 0.45));
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
     touch-action: none;
 }
 
@@ -1657,9 +1730,11 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     height: 60px;
     padding: 0;
     border-radius: 50%;
-    background: var(--primary);
+    background: linear-gradient(135deg, rgba(242, 98, 42, 0.88), rgba(216, 82, 28, 0.88));
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     color: #fff;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     cursor: pointer;
     box-shadow: 0 8px 26px rgba(242, 98, 42, 0.42);
     transition: var(--transition);
