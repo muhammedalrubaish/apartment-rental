@@ -42,12 +42,11 @@ body {
 
 /* Header & Navigation */
 .navbar {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 18px rgba(242, 98, 42, 0.25);
     padding: calc(14px + env(safe-area-inset-top, 0px)) 0 14px;
 }
 
@@ -63,7 +62,7 @@ body {
 .brand-logo {
     font-size: 20px;
     font-weight: 800;
-    color: var(--text-main);
+    color: #ffffff;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -76,10 +75,12 @@ body {
     border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
+    background: #ffffff;
 }
 
 .brand-badge {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     color: #ffffff;
     font-size: 11px;
     padding: 3px 10px;
@@ -91,6 +92,27 @@ body {
     display: flex;
     gap: 12px;
     align-items: center;
+}
+
+.navbar .btn-whatsapp {
+    background: #ffffff;
+    color: var(--primary-dark);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.navbar .btn-whatsapp:hover { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); }
+
+.navbar .btn-owner {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    box-shadow: none;
+}
+
+.navbar .btn-owner:hover {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
+    transform: translateY(-2px);
 }
 
 .btn-primary {
@@ -688,7 +710,13 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     align-items: center;
     justify-content: center;
     font-size: 20px;
+    flex-shrink: 0;
 }
+
+.platform-icon-box svg { width: 22px; height: 22px; }
+
+.platform-icon-gathern { color: var(--primary); background: var(--primary-light); }
+.platform-icon-airbnb { color: #ff385c; background: rgba(255, 56, 92, 0.1); }
 
 .platform-info h4 {
     font-size: 15px;
