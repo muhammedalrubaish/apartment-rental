@@ -59,24 +59,55 @@ function unlock() {
     document.getElementById('lock-screen').style.display = 'none';
     const app = document.getElementById('debt-app');
     app.hidden = false;
+    sessionStorage.setItem(SESSION_KEY, '1');
+    if (window.OwnerGate) window.OwnerGate.markUnlocked();
     initApp();
+    maybeOfferBiometric();
+}
+
+function maybeOfferBiometric() {
+    const gate = window.OwnerGate;
+    if (!gate || !gate.hasBiometricSupport() || gate.hasRegisteredBiometric()) return;
+    setTimeout(async () => {
+        if (!confirm('هل تريد تفعيل الدخول بالبصمة/الوجه على هذا الجهاز لتسجيل دخول أسرع؟')) return;
+        await gate.registerBiometric();
+    }, 600);
 }
 
 function initLock() {
     const form = document.getElementById('lock-form');
     const input = document.getElementById('lock-input');
     const error = document.getElementById('lock-error');
+    const bioBtn = document.getElementById('lock-biometric');
+    const gate = window.OwnerGate;
 
-    if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    // جلسة موحّدة مع لوحة التحكم، أو جلسة محلية سابقة لهذه الصفحة
+    if ((gate && gate.isSessionValid()) || sessionStorage.getItem(SESSION_KEY) === '1') {
         unlock();
         return;
     }
 
+    if (bioBtn && gate && gate.hasBiometricSupport() && gate.hasRegisteredBiometric()) {
+        bioBtn.hidden = false;
+        bioBtn.addEventListener('click', async () => {
+            bioBtn.disabled = true;
+            bioBtn.textContent = 'جارٍ التحقق بالبصمة…';
+            const ok = await gate.tryBiometric();
+            bioBtn.disabled = false;
+            bioBtn.textContent = '🫆 الدخول بالبصمة';
+            if (ok) return unlock();
+            error.textContent = '⛔ تعذّر التحقق بالبصمة — استخدم رمز الدخول';
+        });
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const hash = await sha256(input.value.trim());
+        const raw = input.value.trim();
+
+        if (gate && gate.isFallbackPassword(raw)) return unlock();
+
+        const hash = await sha256(raw);
         if (hash === PASS_HASH) {
-            sessionStorage.setItem(SESSION_KEY, '1');
             unlock();
         } else {
             error.textContent = '⛔ رمز الدخول غير صحيح — تعذّر فتح الملف.';
@@ -808,6 +839,7 @@ function initApp() {
 
     document.getElementById('btn-lock').addEventListener('click', () => {
         sessionStorage.removeItem(SESSION_KEY);
+        if (window.OwnerGate) window.OwnerGate.lock();
         location.reload();
     });
 

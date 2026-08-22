@@ -79,7 +79,7 @@ body {
 }
 
 .brand-badge {
-    background: linear-gradient(135deg, var(--primary), #10b981);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: #ffffff;
     font-size: 11px;
     padding: 3px 10px;
@@ -116,14 +116,14 @@ body {
 }
 
 .btn-whatsapp {
-    background: linear-gradient(135deg, #25D366, #128C7E);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: #ffffff;
     padding: 10px 22px;
     border-radius: 30px;
     font-weight: 700;
     font-size: 14px;
     text-decoration: none;
-    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+    box-shadow: 0 4px 14px rgba(242, 98, 42, 0.3);
     transition: var(--transition);
     display: inline-flex;
     align-items: center;
@@ -132,7 +132,7 @@ body {
 
 .btn-whatsapp:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+    box-shadow: 0 6px 20px rgba(242, 98, 42, 0.45);
 }
 
 /* Layout Containers */
@@ -473,6 +473,14 @@ body.lightbox-open { overflow: hidden; }
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border);
     margin-bottom: 24px;
+}
+
+.amenities-section {
+    background: linear-gradient(135deg, var(--primary-light), #ffffff 60%);
+}
+
+.amenities-section .amenity-card {
+    background: #ffffff;
 }
 
 .card-title {
@@ -1591,15 +1599,16 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
     border-radius: 20px;
     font-size: 13px;
     font-weight: 700;
-    color: #334155;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: 1px solid transparent;
     text-decoration: none;
     transition: all .2s ease;
     white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(242, 98, 42, 0.3);
 }
 
-.btn-owner:hover { background: #e2e8f0; color: #0f172a; }
+.btn-owner:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(242, 98, 42, 0.45); }
 
 @media (max-width: 560px) {
     .btn-owner { padding: 8px 12px; font-size: 12px; }

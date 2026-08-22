@@ -22,21 +22,51 @@
         const app = document.getElementById('app');
         if (lock) lock.remove();
         if (app) app.hidden = false;
+        if (window.OwnerGate) window.OwnerGate.markUnlocked();
         start();
+        maybeOfferBiometric();
+    }
+
+    function maybeOfferBiometric() {
+        const gate = window.OwnerGate;
+        if (!gate || !gate.hasBiometricSupport() || gate.hasRegisteredBiometric()) return;
+        setTimeout(async () => {
+            if (!confirm('هل تريد تفعيل الدخول بالبصمة/الوجه على هذا الجهاز لتسجيل دخول أسرع؟')) return;
+            const ok = await gate.registerBiometric();
+            toast(ok ? 'تم تفعيل الدخول بالبصمة' : 'تعذّر تفعيل البصمة على هذا الجهاز', !ok);
+        }, 600);
     }
 
     async function initGate() {
         const form = document.getElementById('lock-form');
         const input = document.getElementById('lock-pass');
         const err = document.getElementById('lock-err');
+        const bioBtn = document.getElementById('lock-biometric');
+        const gate = window.OwnerGate;
         const client = window.getSupabaseClient ? window.getSupabaseClient() : null;
 
         if (!form) return unlock();                       // لا توجد بوابة
 
-        // جلسة محفوظة مسبقاً (Supabase يحفظها في localStorage تلقائياً)
+        // جلسة موحّدة محفوظة مسبقاً (بصمة/كلمة سر عبر أي من صفحتَي المالك)
+        if (gate && gate.isSessionValid()) return unlock();
+
+        // جلسة Supabase محفوظة مسبقاً
         if (client) {
             const { data } = await client.auth.getSession();
             if (data && data.session) return unlock();
+        }
+
+        if (bioBtn && gate && gate.hasBiometricSupport() && gate.hasRegisteredBiometric()) {
+            bioBtn.hidden = false;
+            bioBtn.addEventListener('click', async () => {
+                bioBtn.disabled = true;
+                bioBtn.textContent = 'جارٍ التحقق بالبصمة…';
+                const ok = await gate.tryBiometric();
+                bioBtn.disabled = false;
+                bioBtn.textContent = '🫆 الدخول بالبصمة';
+                if (ok) return unlock();
+                err.textContent = 'تعذّر التحقق بالبصمة — استخدم رمز الدخول';
+            });
         }
 
         input.focus();
@@ -44,6 +74,9 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // كلمة السر الاحتياطية إذا تعذّرت البصمة (دخول محلي دون جلسة Supabase حقيقية)
+            if (gate && gate.isFallbackPassword(input.value)) return unlock();
 
             if (!client) {
                 err.textContent = 'تعذّر الاتصال بالخادم — تحقق من الإنترنت';
@@ -941,6 +974,38 @@
         return contactFromRow(data);
     }
 
+    async function updateContact(id, patch) {
+        const client = sbc();
+        if (!client) { toast('تعذّر الاتصال بقاعدة البيانات', true); return null; }
+
+        const { data, error } = await client
+            .from('contacts')
+            .update(contactToRow(patch))
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('[contacts] فشل تعديل جهة الاتصال:', error);
+            toast('تعذّر حفظ التعديل', true);
+            return null;
+        }
+        return contactFromRow(data);
+    }
+
+    async function deleteContact(id) {
+        const client = sbc();
+        if (!client) { toast('تعذّر الاتصال بقاعدة البيانات', true); return false; }
+
+        const { error } = await client.from('contacts').delete().eq('id', id);
+        if (error) {
+            console.error('[contacts] فشل حذف جهة الاتصال:', error);
+            toast('تعذّر حذف جهة الاتصال', true);
+            return false;
+        }
+        return true;
+    }
+
     /* ---------------------------------------------------------------------
        جدول المصاريف الحقيقي في Supabase (public.expenses)
        --------------------------------------------------------------------- */
@@ -1362,6 +1427,8 @@
                     <div style="display:flex;gap:6px;justify-content:flex-end">
                         ${wa ? `<a class="btn btn-ghost btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">واتساب</a>` : ''}
                         <button class="btn btn-ghost btn-sm" data-book-contact="${c.id}">حجز</button>
+                        <button class="btn btn-ghost btn-sm" data-edit-contact="${c.id}">تعديل</button>
+                        <button class="btn btn-ghost btn-sm" data-del-contact="${c.id}" style="color:var(--danger)">حذف</button>
                     </div>
                 </td>
             </tr>`;
@@ -1370,6 +1437,24 @@
         $$('[data-book-contact]').forEach((btn) => {
             const c = state.contacts.find((x) => x.id === btn.dataset.bookContact);
             btn.addEventListener('click', () => openBookingForm({ guest: c.name, phone: c.phone, source: 'direct' }));
+        });
+
+        $$('[data-edit-contact]').forEach((btn) => {
+            const c = state.contacts.find((x) => x.id === btn.dataset.editContact);
+            btn.addEventListener('click', () => openContactForm(c));
+        });
+
+        $$('[data-del-contact]').forEach((btn) => {
+            const c = state.contacts.find((x) => x.id === btn.dataset.delContact);
+            btn.addEventListener('click', async () => {
+                if (!confirm(`حذف جهة الاتصال «${c.name}»؟`)) return;
+                const ok = await deleteContact(c.id);
+                if (!ok) return;
+                state.contacts = state.contacts.filter((x) => x.id !== c.id);
+                save();
+                toast('تم حذف جهة الاتصال');
+                renderContacts();
+            });
         });
     }
 
@@ -1724,20 +1809,23 @@
         });
     }
 
-    function openContactForm() {
-        openModal('جهة اتصال جديدة', `
-            <div class="field"><label>الاسم</label><input class="input" id="c-name" placeholder="الاسم الكامل"></div>
+    function openContactForm(existing) {
+        const isNew = !existing;
+        const c = existing || { name: '', phone: '', source: 'manual', email: '', note: '' };
+
+        openModal(isNew ? 'جهة اتصال جديدة' : 'تعديل جهة الاتصال', `
+            <div class="field"><label>الاسم</label><input class="input" id="c-name" placeholder="الاسم الكامل" value="${escapeHtml(c.name)}"></div>
             <div class="form-row">
-                <div class="field"><label>الجوال</label><input class="input" id="c-phone" placeholder="05xxxxxxxx"></div>
+                <div class="field"><label>الجوال</label><input class="input" id="c-phone" placeholder="05xxxxxxxx" value="${escapeHtml(c.phone)}"></div>
                 <div class="field"><label>المصدر</label><select class="input" id="c-source">
-                    <option value="manual">إضافة يدوية</option>
-                    <option value="direct">الموقع المباشر</option>
-                    <option value="gathern">جاذر إن</option>
-                    <option value="airbnb">Airbnb</option>
+                    <option value="manual"${c.source === 'manual' ? ' selected' : ''}>إضافة يدوية</option>
+                    <option value="direct"${c.source === 'direct' ? ' selected' : ''}>الموقع المباشر</option>
+                    <option value="gathern"${c.source === 'gathern' ? ' selected' : ''}>جاذر إن</option>
+                    <option value="airbnb"${c.source === 'airbnb' ? ' selected' : ''}>Airbnb</option>
                 </select></div>
             </div>
-            <div class="field"><label>البريد الإلكتروني</label><input class="input" id="c-email" placeholder="اختياري"></div>
-            <div class="field"><label>ملاحظات</label><input class="input" id="c-note" placeholder="اختياري"></div>`,
+            <div class="field"><label>البريد الإلكتروني</label><input class="input" id="c-email" placeholder="اختياري" value="${escapeHtml(c.email || '')}"></div>
+            <div class="field"><label>ملاحظات</label><input class="input" id="c-note" placeholder="اختياري" value="${escapeHtml(c.note || '')}"></div>`,
             `<button class="btn btn-ghost" id="c-cancel">إلغاء</button>
              <button class="btn btn-primary" id="c-save">حفظ</button>`);
 
@@ -1747,27 +1835,34 @@
             if (!name) return toast('أدخل الاسم', true);
 
             const phone = $('#c-phone').value.trim();
-            if (phone && state.contacts.some((x) => x.phone === phone)) {
+            if (phone && state.contacts.some((x) => x.phone === phone && x.id !== c.id)) {
                 return toast('هذا الجوال مسجّل مسبقاً', true);
             }
 
             const saveBtn = $('#c-save');
             saveBtn.disabled = true;
 
-            const contact = await createContact({
+            const payload = {
                 name, phone,
                 email: $('#c-email').value.trim(),
                 source: $('#c-source').value,
                 note: $('#c-note').value.trim(),
-            });
+            };
+
+            const saved = isNew ? await createContact(payload) : await updateContact(c.id, payload);
 
             saveBtn.disabled = false;
-            if (!contact) return;
+            if (!saved) return;
 
-            state.contacts.push(contact);
+            if (isNew) {
+                state.contacts.push(saved);
+            } else {
+                const idx = state.contacts.findIndex((x) => x.id === c.id);
+                if (idx !== -1) state.contacts[idx] = saved;
+            }
             save();
             closeModal();
-            toast('تمت إضافة جهة الاتصال');
+            toast(isNew ? 'تمت إضافة جهة الاتصال' : 'تم حفظ التعديل');
             renderContacts();
         });
     }
@@ -1929,7 +2024,7 @@
             billsExpanded = !billsExpanded;
             renderBills();
         });
-        $('#btn-add-contact').addEventListener('click', openContactForm);
+        $('#btn-add-contact').addEventListener('click', () => openContactForm());
         $('#btn-add-prop').addEventListener('click', () => openPropertyForm(null));
         $('#contact-search').addEventListener('input', renderContacts);
 
@@ -2059,6 +2154,7 @@
             if (!confirm('تسجيل الخروج من لوحة التحكم؟')) return;
             const client = window.getSupabaseClient ? window.getSupabaseClient() : null;
             if (client) await client.auth.signOut();
+            if (window.OwnerGate) window.OwnerGate.lock();
             stopMessagesRealtime();
             location.reload();
         });

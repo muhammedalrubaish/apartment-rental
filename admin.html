@@ -36,6 +36,8 @@
         <h1>لوحة تحكم المالك</h1>
         <p>هذه الصفحة خاصة بالمالك.<br>أدخل رمز الدخول للمتابعة.</p>
 
+        <button type="button" class="lock-biometric" id="lock-biometric" hidden>🫆 الدخول بالبصمة</button>
+
         <form class="lock-form" id="lock-form" autocomplete="off">
             <input type="password" id="lock-pass" placeholder="رمز الدخول" inputmode="numeric" autocomplete="current-password">
             <button type="submit">دخول</button>
@@ -116,6 +118,10 @@
             </div>
 
             <div class="topbar-actions">
+                <a href="collection.html" class="btn btn-ghost btn-sm" id="btn-goto-debt" title="لوحة تحصيل الدين">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span>تحصيل الدين</span>
+                </a>
                 <a href="index.html" class="btn btn-ghost btn-sm" id="btn-view-site" title="عرض الموقع">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 21 3M21 3h-6M21 3v6"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
                     <span>عرض الموقع</span>
@@ -428,6 +434,7 @@
 <!-- Supabase (مستضاف محلياً) لمصادقة المالك ورسائل الزوار -->
 <script src="assets/vendor/supabase/supabase.js"></script>
 <script src="assets/js/supabase-config.js"></script>
+<script src="assets/js/owner-gate.js"></script>
 <script src="assets/js/admin.js"></script>
 </body>
 </html>

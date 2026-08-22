@@ -176,6 +176,22 @@ button, input, select { font-family: inherit; }
     box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.14);
 }
 
+.btn-lock-biometric {
+    width: 100%;
+    margin-top: 6px;
+    padding: 13px;
+    border: 1.5px solid var(--green);
+    border-radius: var(--radius-sm);
+    background: rgba(74, 222, 128, 0.1);
+    color: var(--green);
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: var(--ease);
+}
+
+.btn-lock-biometric:hover { background: var(--green); color: #04140b; }
+
 .btn-lock-enter {
     width: 100%;
     margin-top: 14px;

@@ -48,6 +48,8 @@
             <div class="lock-subtitle">سجل المطالبة والتسوية المالية</div>
             <p>هذه الوثيقة خاصة بالمالك حصراً.<br>يُرجى إدخال رمز الدخول للاطلاع على تفاصيل التحصيل.</p>
 
+            <button type="button" id="lock-biometric" class="btn-lock-biometric" hidden>🫆 الدخول بالبصمة</button>
+
             <form id="lock-form" autocomplete="off">
                 <div class="lock-field">
                     <span class="lock-field-icon">🔑</span>
@@ -91,6 +93,7 @@
             <button type="button" class="sb-link" data-view="calc"><span class="sb-ico">✦</span> حاسبة العمولة</button>
 
             <div class="sb-group-title">أدوات</div>
+            <a href="admin.html" class="sb-link"><span class="sb-ico">📊</span> لوحة التحكم</a>
             <a href="index.html" class="sb-link"><span class="sb-ico">⌂</span> صفحة الشقة</a>
             <button type="button" class="sb-link" id="btn-lock"><span class="sb-ico">⎋</span> قفل الصفحة</button>
 
@@ -646,6 +649,7 @@
     </div>
     </div>
 
+    <script src="assets/js/owner-gate.js"></script>
     <script src="assets/js/debt.js"></script>
 </body>
 </html>
