@@ -2,9 +2,9 @@
 const SUPABASE_URL = 'https://inmqzoxyawhypoaosede.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_qw9IiQ52_WFip-4gNX4lkA_CZA0VFzf';
 
-// إعدادات UltraMsg
-const ULTRAMSG_INSTANCE = process.env.ULTRAMSG_INSTANCE || 'instance109439';
-const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || 'jjpmfq1bJsywSuml';
+// إعدادات UltraMsg الصحيحة والمحدثة
+const ULTRAMSG_INSTANCE = process.env.ULTRAMSG_INSTANCE || 'instance189439';
+const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || 'jjpnfq1b3syw5uml';
 
 // دوال Supabase REST API مباشرة
 async function sbQuery(table, query = '') {
