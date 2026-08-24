@@ -1,14 +1,77 @@
 // api/cv-webhook.js - Webhook الوكيل الهجين لبوت السيرة الذاتية (iDes CV)
-const { createClient } = require('@supabase/supabase-js');
 
-// إعدادات Supabase لمشروع malrubaish
 const SUPABASE_URL = 'https://inmqzoxyawhypoaosede.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_publishable_qw9IiQ52_WFip-4gNX4lkA_CZA0VFzf'; // أو مفتاح السيرفس
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_qw9IiQ52_WFip-4gNX4lkA_CZA0VFzf';
 
-// إعدادات UltraMsg
 const ULTRAMSG_INSTANCE = process.env.ULTRAMSG_INSTANCE || 'instance109439';
 const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || 'jjpmfq1bJsywSuml';
+
+// دوال Supabase REST API مباشرة دون الحاجة لمكتبات خارجية
+async function sbQuery(table, query = '') {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        return await res.json();
+    } catch (e) {
+        console.error('[SB Query Error]:', e);
+        return [];
+    }
+}
+
+async function sbInsert(table, data) {
+    try {
+        await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(data)
+        });
+    } catch (e) {
+        console.error('[SB Insert Error]:', e);
+    }
+}
+
+async function sbUpsert(table, data) {
+    try {
+        await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify(data)
+        });
+    } catch (e) {
+        console.error('[SB Upsert Error]:', e);
+    }
+}
+
+async function sbUpdate(table, query, data) {
+    try {
+        await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`, {
+            method: 'PATCH',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(data)
+        });
+    } catch (e) {
+        console.error('[SB Update Error]:', e);
+    }
+}
 
 async function sendWhatsAppMessage(to, body) {
     try {
@@ -30,7 +93,6 @@ async function sendWhatsAppMessage(to, body) {
     }
 }
 
-// تدفق جمع بيانات السيرة الذاتية خطوة بخطوة
 const STEPS = {
     WELCOME: 'welcome',
     FULL_NAME: 'name',
@@ -56,35 +118,38 @@ const WELCOME_MSG = `🌟 *أهلاً بك في iDes لتصميم السيرة �
 _(مثال: محمد عبدالله الأحمدي)_`;
 
 module.exports = async (req, res) => {
+    if (req.method === 'GET') {
+        return res.status(200).send('CV Webhook is running active and healthy! 🚀');
+    }
+
     if (req.method !== 'POST') {
-        return res.status(200).send('CV Webhook is running active!');
+        return res.status(405).send('Method Not Allowed');
     }
 
     try {
-        const data = req.body?.data || req.body;
-        if (!data) return res.status(200).json({ status: 'no_data' });
-
-        const from = data.from; // رقم المرسل (العميل) مثل 966549814764@c.us
+        const payload = req.body || {};
+        const data = payload.data || payload;
+        
+        const from = data.from;
         const body = (data.body || '').trim();
-        const fromMe = data.fromMe; // هل الرسالة مرسلة من صاحب الجوال نفسه
-        const id = data.id;
+        const fromMe = !!data.fromMe;
 
-        if (!from || !body) return res.status(200).json({ status: 'ignored' });
+        if (!from || !body) {
+            return res.status(200).json({ status: 'ignored_no_body' });
+        }
 
-        // تنظيف رقم الهاتف
         const phone = from.replace('@c.us', '').replace('+', '').trim();
 
         // 1. إذا كان صاحب الحساب هو الذي أرسل رسالة للعميل (تدخل بشري)
         if (fromMe) {
-            console.log(`[Human Takeover] Manual message detected to ${phone}`);
-            // تحويل المحادثة للوضع اليدوي وإيقاف البوت
-            await supabase.from('conversations').upsert({
+            console.log(`[Human Takeover] Manual message to ${phone}`);
+            await sbUpsert('conversations', {
                 phone,
                 mode: 'manual',
                 last_message_at: new Date().toISOString()
-            }, { onConflict: 'phone' });
+            });
 
-            await supabase.from('messages').insert({
+            await sbInsert('messages', {
                 phone,
                 dir: 'out',
                 actor: 'owner',
@@ -92,12 +157,11 @@ module.exports = async (req, res) => {
                 ts: Date.now()
             });
 
-            return res.status(200).json({ status: 'human_outgoing_recorded' });
+            return res.status(200).json({ status: 'human_takeover_recorded' });
         }
 
-        // 2. إذا كانت الرسالة واردة من عميل
-        // تسجيل الرسالة الواردة
-        await supabase.from('messages').insert({
+        // 2. تسجيل الرسالة الواردة
+        await sbInsert('messages', {
             phone,
             dir: 'in',
             actor: 'customer',
@@ -105,8 +169,9 @@ module.exports = async (req, res) => {
             ts: Date.now()
         });
 
-        // جلب سجل المحادثة للعميل
-        let { data: conv } = await supabase.from('conversations').select('*').eq('phone', phone).maybeSingle();
+        // جلب سجل المحادثة
+        const convList = await sbQuery('conversations', `?phone=eq.${phone}&limit=1`);
+        let conv = convList && convList.length ? convList[0] : null;
 
         // إذا كان العميل جديداً
         if (!conv) {
@@ -120,25 +185,22 @@ module.exports = async (req, res) => {
                 created_at: new Date().toISOString(),
                 last_message_at: new Date().toISOString()
             };
-            await supabase.from('conversations').insert(conv);
+            await sbInsert('conversations', conv);
             await sendWhatsAppMessage(phone, WELCOME_MSG);
-            return res.status(200).json({ status: 'new_lead_welcomed' });
+            return res.status(200).json({ status: 'welcomed' });
         }
 
-        // إذا كانت المحادثة في وضع التحويل البشري (manual)، لا يرد البوت إلا إذا طلب العميل إعادة التشغيل
+        // إذا كانت المحادثة في وضع التحويل البشري (manual)
         if (conv.mode === 'manual') {
             if (body.toLowerCase() === 'تفعيل' || body.toLowerCase() === 'بدء' || body.toLowerCase() === 'reset') {
-                conv.mode = 'auto';
-                conv.step = STEPS.FULL_NAME;
-                await supabase.from('conversations').update({ mode: 'auto', step: STEPS.FULL_NAME }).eq('phone', phone);
+                await sbUpdate('conversations', `?phone=eq.${phone}`, { mode: 'auto', step: STEPS.FULL_NAME });
                 await sendWhatsAppMessage(phone, WELCOME_MSG);
                 return res.status(200).json({ status: 'bot_reactivated' });
             }
-            console.log(`[Manual Mode] Bot is muted for ${phone}`);
-            return res.status(200).json({ status: 'bot_muted_manual_mode' });
+            return res.status(200).json({ status: 'manual_mode_active' });
         }
 
-        // 3. معالجة خطوات البوت الذكي
+        // 3. مسار البوت خطوة بخطوة
         let reply = '';
         let nextStep = conv.step;
         const cvData = conv.cv_data || { personalInfo: { phone }, experience: [], education: [], skills: [] };
@@ -188,17 +250,17 @@ module.exports = async (req, res) => {
         }
 
         // تحديث قاعدة البيانات
-        await supabase.from('conversations').update({
-            name: conv.name || conv.personalInfo?.fullName || '',
+        await sbUpdate('conversations', `?phone=eq.${phone}`, {
+            name: conv.name || cvData.personalInfo?.fullName || '',
             step: nextStep,
             cv_data: cvData,
             last_message_at: new Date().toISOString()
-        }).eq('phone', phone);
+        });
 
-        // إرسال الرد للعميل
+        // إرسال الرد
         if (reply) {
             await sendWhatsAppMessage(phone, reply);
-            await supabase.from('messages').insert({
+            await sbInsert('messages', {
                 phone,
                 dir: 'out',
                 actor: 'bot',
@@ -207,9 +269,9 @@ module.exports = async (req, res) => {
             });
         }
 
-        return res.status(200).json({ status: 'success', nextStep });
-    } catch (error) {
-        console.error('[Webhook Error]:', error);
-        return res.status(500).json({ error: error.message });
+        return res.status(200).json({ status: 'ok', nextStep });
+    } catch (err) {
+        console.error('[Webhook Global Error]:', err);
+        return res.status(500).json({ error: err.message });
     }
 };
