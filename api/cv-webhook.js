@@ -1,11 +1,10 @@
-// api/cv-webhook.js - Webhook الوكيل الهجين لبوت السيرة الذاتية عبر Green API
+// api/cv-webhook.js - Webhook الوكيل الهجين لبوت السيرة الذاتية عبر UltraMsg
 const SUPABASE_URL = 'https://inmqzoxyawhypoaosede.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_qw9IiQ52_WFip-4gNX4lkA_CZA0VFzf';
 
-// إعدادات Green API
-const GREEN_API_URL = process.env.GREEN_API_URL || 'https://7107.api.greenapi.com';
-const GREEN_ID_INSTANCE = process.env.GREEN_ID_INSTANCE || '710722718573';
-const GREEN_API_TOKEN = process.env.GREEN_API_TOKEN || '490178eb5b4c462380cf28482cbc847b47939e79d69b4a9aa2';
+// إعدادات UltraMsg
+const ULTRAMSG_INSTANCE = process.env.ULTRAMSG_INSTANCE || 'instance109439';
+const ULTRAMSG_TOKEN = process.env.ULTRAMSG_TOKEN || 'jjpmfq1bJsywSuml';
 
 // دوال Supabase REST API مباشرة
 async function sbQuery(table, query = '') {
@@ -74,21 +73,26 @@ async function sbUpdate(table, query, data) {
     }
 }
 
-// دالة إرسال رسالة عبر Green API
-async function sendGreenMessage(chatId, message) {
+// دالة إرسال رسالة عبر UltraMsg
+async function sendWhatsAppMessage(to, body) {
     try {
-        const url = `${GREEN_API_URL}/waInstance${GREEN_ID_INSTANCE}/sendMessage/${GREEN_API_TOKEN}`;
+        const url = `https://api.ultramsg.com/${ULTRAMSG_INSTANCE}/messages/chat`;
+        const params = new URLSearchParams();
+        params.append('token', ULTRAMSG_TOKEN);
+        params.append('to', to);
+        params.append('body', body);
+        params.append('priority', '10');
+
         const res = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chatId: chatId.includes('@') ? chatId : `${chatId}@c.us`,
-                message: message
-            })
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
         });
-        return await res.json();
+        const json = await res.json();
+        console.log('[UltraMsg Send Response]:', json);
+        return json;
     } catch (e) {
-        console.error('[Green API Send Error]:', e);
+        console.error('[UltraMsg Send Error]:', e);
     }
 }
 
@@ -118,7 +122,7 @@ _(مثال: محمد عبدالله الأحمدي)_`;
 
 module.exports = async (req, res) => {
     if (req.method === 'GET') {
-        return res.status(200).send('Green API CV Webhook is running active and healthy! 🚀');
+        return res.status(200).send('UltraMsg CV Webhook is running active and healthy! 🚀');
     }
 
     if (req.method !== 'POST') {
@@ -126,38 +130,27 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const body = req.body || {};
-        const typeWebhook = body.typeWebhook;
-
-        // تجاهل أي إشعارات غير الرسائل الواردة/الصادرة
-        if (!typeWebhook || (!typeWebhook.startsWith('incomingMessageReceived') && !typeWebhook.startsWith('outgoingMessageReceived') && !typeWebhook.startsWith('outgoingAPIMessageReceived'))) {
-            return res.status(200).json({ status: 'ignored_type', typeWebhook });
-        }
-
-        const msgData = body.messageData;
-        const senderData = body.senderData || {};
-        const chatId = senderData.chatId || body.chatId || '';
+        const payload = req.body || {};
+        const data = payload.data || payload;
         
-        // استخراج نص الرسالة
-        const textMessage = msgData?.textMessageData?.textMessage 
-                         || msgData?.extendedTextMessageData?.text 
-                         || '';
+        const from = data.from || '';
+        const body = (data.body || '').trim();
+        const fromMe = !!data.fromMe;
 
-        if (!chatId || !textMessage) {
-            return res.status(200).json({ status: 'no_chat_or_text' });
+        if (!from || !body) {
+            return res.status(200).json({ status: 'ignored_no_body' });
         }
 
-        // تنظيف رقم الهاتف
-        const phone = chatId.replace('@c.us', '').replace('@g.us', '').replace('+', '').trim();
+        const phone = from.replace('@c.us', '').replace('@g.us', '').replace('+', '').trim();
 
-        // تجنب الرد داخل المجموعات
-        if (chatId.includes('@g.us')) {
+        // تجنب مجموعات الواتساب
+        if (from.includes('@g.us')) {
             return res.status(200).json({ status: 'ignored_group' });
         }
 
-        // 1. إذا كانت الرسالة صادرة من صاحب الجوال يدوياً (تدخل بشري)
-        if (typeWebhook === 'outgoingMessageReceived') {
-            console.log(`[Human Takeover] Manual outgoing message to ${phone}`);
+        // 1. إذا كان صاحب الحساب هو الذي أرسل رسالة للعميل (تدخل بشري)
+        if (fromMe) {
+            console.log(`[Human Takeover] Manual message to ${phone}`);
             await sbUpsert('conversations', {
                 phone,
                 mode: 'manual',
@@ -168,24 +161,19 @@ module.exports = async (req, res) => {
                 phone,
                 dir: 'out',
                 actor: 'owner',
-                text: textMessage,
+                text: body,
                 ts: Date.now()
             });
 
             return res.status(200).json({ status: 'human_takeover_recorded' });
         }
 
-        // إذا كانت صادرة من الـ API الخاص بنا، نسجلها فقط ولا نعيد معالجتها
-        if (typeWebhook === 'outgoingAPIMessageReceived') {
-            return res.status(200).json({ status: 'api_message_acknowledged' });
-        }
-
-        // 2. معالجة الرسائل الواردة من العميل (incomingMessageReceived)
+        // 2. تسجيل الرسالة الواردة من العميل
         await sbInsert('messages', {
             phone,
             dir: 'in',
             actor: 'customer',
-            text: textMessage,
+            text: body,
             ts: Date.now()
         });
 
@@ -197,7 +185,7 @@ module.exports = async (req, res) => {
         if (!conv) {
             conv = {
                 phone,
-                name: senderData.senderName || '',
+                name: '',
                 step: STEPS.FULL_NAME,
                 cv_data: { personalInfo: { phone }, experience: [], education: [], skills: [] },
                 mode: 'auto',
@@ -206,15 +194,15 @@ module.exports = async (req, res) => {
                 last_message_at: new Date().toISOString()
             };
             await sbInsert('conversations', conv);
-            await sendGreenMessage(chatId, WELCOME_MSG);
+            await sendWhatsAppMessage(phone, WELCOME_MSG);
             return res.status(200).json({ status: 'welcomed' });
         }
 
         // إذا كانت المحادثة في وضع التحويل البشري (manual)
         if (conv.mode === 'manual') {
-            if (textMessage.toLowerCase() === 'تفعيل' || textMessage.toLowerCase() === 'بدء' || textMessage.toLowerCase() === 'reset') {
+            if (body.toLowerCase() === 'تفعيل' || body.toLowerCase() === 'بدء' || body.toLowerCase() === 'reset') {
                 await sbUpdate('conversations', `?phone=eq.${phone}`, { mode: 'auto', step: STEPS.FULL_NAME });
-                await sendGreenMessage(chatId, WELCOME_MSG);
+                await sendWhatsAppMessage(phone, WELCOME_MSG);
                 return res.status(200).json({ status: 'bot_reactivated' });
             }
             return res.status(200).json({ status: 'manual_mode_active' });
@@ -227,39 +215,39 @@ module.exports = async (req, res) => {
 
         switch (conv.step) {
             case STEPS.FULL_NAME:
-                conv.name = textMessage;
+                conv.name = body;
                 cvData.personalInfo = cvData.personalInfo || {};
-                cvData.personalInfo.fullName = textMessage;
+                cvData.personalInfo.fullName = body;
                 nextStep = STEPS.JOB_TITLE;
-                reply = `تشرفنا يا أستاذ *${textMessage}* 🤝\n\nما هو *المسمى الوظيفي أو التخصص* الذي تستهدفه؟\n_(مثال: مهندس برمجيات / أخصائي موارد بشرية / محاسب)_`;
+                reply = `تشرفنا يا أستاذ *${body}* 🤝\n\nما هو *المسمى الوظيفي أو التخصص* الذي تستهدفه؟\n_(مثال: مهندس برمجيات / أخصائي موارد بشرية / محاسب)_`;
                 break;
 
             case STEPS.JOB_TITLE:
-                cvData.personalInfo.jobTitle = textMessage;
+                cvData.personalInfo.jobTitle = body;
                 nextStep = STEPS.EXPERIENCE;
                 reply = `ممتاز! 💼\n\nتفضل بكتابة *الخبرات المهنية السابقة* (الشركة، المسمى، وسنوات العمل إن وُجدت):\n_(أو اكتب "خريج جديد / لا يوجد" إذا كنت لا تملك خبرات بعد)_`;
                 break;
 
             case STEPS.EXPERIENCE:
-                cvData.experienceRaw = textMessage;
+                cvData.experienceRaw = body;
                 nextStep = STEPS.EDUCATION;
                 reply = `رائع! 🎓\n\nما هو *المؤهل التعليمي*؟ (الجامعة/الكلية، التخصص، وسنة التخرج):\n_(مثال: بكالوريوس إدارة أعمال - جامعة الملك سعود 2024)_`;
                 break;
 
             case STEPS.EDUCATION:
-                cvData.educationRaw = textMessage;
+                cvData.educationRaw = body;
                 nextStep = STEPS.SKILLS;
                 reply = `أحسنت! ⚡\n\nما هي أبرز *المهارات والبرامج أو اللغات* التي تتقنها؟\n_(مثال: إدارة المشاريع، Excel، العمل الجماعي، لغة إنجليزية)_`;
                 break;
 
             case STEPS.SKILLS:
-                cvData.skillsRaw = textMessage;
+                cvData.skillsRaw = body;
                 nextStep = STEPS.CITY_EMAIL;
                 reply = `ممتاز جداً! 📍\n\nأخيراً، لطفاً اكتب *المدينة والبريد الإلكتروني*:\n_(مثال: الرياض - info@example.com)_`;
                 break;
 
             case STEPS.CITY_EMAIL:
-                cvData.contactRaw = textMessage;
+                cvData.contactRaw = body;
                 nextStep = STEPS.CONFIRMATION;
                 reply = `🎉 *تم استلام جميع بياناتك بنجاح!*\n\nسيبدأ فريق *iDes* الآن في صياغة وتنسيق سيرتك الذاتية وفق معايير الـ ATS العالمية 📄✨\n\n💳 *قيمة الخدمة:* 50 ريال\nلإتمام الطلب وتأكيد البدء، يمكنك التحويل عبر الحساب البنكي أو STC Pay وسيتم تزويدك بالملف PDF + Word جاهزاً للطباعة والتقديم.\n\nهل ترغب في إضافة أي ملاحظات أو شهادات دورات إضافية؟`;
                 break;
@@ -277,9 +265,9 @@ module.exports = async (req, res) => {
             last_message_at: new Date().toISOString()
         });
 
-        // إرسال الرد للعميل
+        // إرسال الرد
         if (reply) {
-            await sendGreenMessage(chatId, reply);
+            await sendWhatsAppMessage(phone, reply);
             await sbInsert('messages', {
                 phone,
                 dir: 'out',
@@ -291,7 +279,7 @@ module.exports = async (req, res) => {
 
         return res.status(200).json({ status: 'ok', nextStep });
     } catch (err) {
-        console.error('[Green Webhook Global Error]:', err);
+        console.error('[UltraMsg Webhook Global Error]:', err);
         return res.status(500).json({ error: err.message });
     }
 };
