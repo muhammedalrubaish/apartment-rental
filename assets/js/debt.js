@@ -119,6 +119,69 @@ function initLock() {
     input.focus();
 }
 
+/* ---------- مزامنة Supabase السحابية ---------- */
+
+function getSB() {
+    return (window.getSupabaseClient && typeof window.getSupabaseClient === 'function')
+        ? window.getSupabaseClient()
+        : null;
+}
+
+async function syncFromSupabase() {
+    const sb = getSB();
+    if (!sb) return;
+
+    try {
+        // 1. جلب الدفعات
+        const { data: pData, error: pErr } = await sb.from('debt_payments').select('*').order('date', { ascending: true });
+        if (!pErr && pData && pData.length) {
+            localStorage.setItem(PAYMENTS_KEY, JSON.stringify(pData));
+        } else if (!pErr && pData && pData.length === 0) {
+            // مزامنة الدفعات المحلية الأولية إلى Supabase إن وُجدت
+            const localP = loadStore(PAYMENTS_KEY, []);
+            if (localP.length > 0) {
+                await sb.from('debt_payments').upsert(localP.map(p => ({
+                    id: p.id,
+                    date: p.date,
+                    amount: p.amount,
+                    note: p.note || ''
+                })));
+            }
+        }
+
+        // 2. جلب الحجوزات
+        const { data: bData, error: bErr } = await sb.from('debt_bookings').select('*').order('date', { ascending: false });
+        if (!bErr && bData && bData.length) {
+            localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bData));
+        } else if (!bErr && bData && bData.length === 0) {
+            const localB = loadStore(BOOKINGS_KEY, []);
+            if (localB.length > 0) {
+                await sb.from('debt_bookings').upsert(localB.map(b => ({
+                    id: b.id,
+                    date: b.date,
+                    platform: b.platform,
+                    method: b.method || 'platform',
+                    nights: b.nights || 1,
+                    amount: b.amount,
+                    fee: b.fee || 0,
+                    note: b.note || ''
+                })));
+            }
+        }
+
+        // 3. جلب المنصات
+        const { data: sData, error: sErr } = await sb.from('debt_settings').select('*').eq('key', 'platforms').maybeSingle();
+        if (!sErr && sData && sData.value && Array.isArray(sData.value)) {
+            localStorage.setItem(PLATFORMS_KEY, JSON.stringify(sData.value));
+        }
+
+        recalc();
+        renderPlatformOptions();
+    } catch (err) {
+        console.warn('[debt-sync] تعذر الاتصال بـ Supabase:', err);
+    }
+}
+
 /* ---------- الدفعات ---------- */
 
 function loadPayments() {
@@ -133,6 +196,26 @@ function loadPayments() {
 
 function savePayments(list) {
     localStorage.setItem(PAYMENTS_KEY, JSON.stringify(list));
+    const sb = getSB();
+    if (sb) {
+        // حفظ ومزامنة في Supabase
+        sb.from('debt_payments').select('id').then(({ data }) => {
+            const existingIds = (data || []).map(x => x.id);
+            const currentIds = list.map(x => x.id);
+            const toDelete = existingIds.filter(id => !currentIds.includes(id));
+            if (toDelete.length) {
+                sb.from('debt_payments').delete().in('id', toDelete).then();
+            }
+            if (list.length) {
+                sb.from('debt_payments').upsert(list.map(p => ({
+                    id: p.id,
+                    date: p.date,
+                    amount: p.amount,
+                    note: p.note || ''
+                }))).then();
+            }
+        });
+    }
 }
 
 function renderPayments(debtTotal) {
@@ -182,9 +265,45 @@ function loadStore(key, fallback) {
 }
 
 const loadBookings = () => loadStore(BOOKINGS_KEY, []);
-const saveBookings = list => localStorage.setItem(BOOKINGS_KEY, JSON.stringify(list));
+function saveBookings(list) {
+    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(list));
+    const sb = getSB();
+    if (sb) {
+        sb.from('debt_bookings').select('id').then(({ data }) => {
+            const existingIds = (data || []).map(x => x.id);
+            const currentIds = list.map(x => x.id);
+            const toDelete = existingIds.filter(id => !currentIds.includes(id));
+            if (toDelete.length) {
+                sb.from('debt_bookings').delete().in('id', toDelete).then();
+            }
+            if (list.length) {
+                sb.from('debt_bookings').upsert(list.map(b => ({
+                    id: b.id,
+                    date: b.date,
+                    platform: b.platform,
+                    method: b.method || 'platform',
+                    nights: b.nights || 1,
+                    amount: b.amount,
+                    fee: b.fee || 0,
+                    note: b.note || ''
+                }))).then();
+            }
+        });
+    }
+}
+
 const loadPlatforms = () => loadStore(PLATFORMS_KEY, DEFAULT_PLATFORMS.slice());
-const savePlatforms = list => localStorage.setItem(PLATFORMS_KEY, JSON.stringify(list));
+function savePlatforms(list) {
+    localStorage.setItem(PLATFORMS_KEY, JSON.stringify(list));
+    const sb = getSB();
+    if (sb) {
+        sb.from('debt_settings').upsert({
+            key: 'platforms',
+            value: list,
+            updated_at: new Date().toISOString()
+        }).then();
+    }
+}
 
 function renderPlatformOptions() {
     const select = document.getElementById('bk-platform');
@@ -844,6 +963,7 @@ function initApp() {
     });
 
     recalc();
+    syncFromSupabase();
 }
 
 document.addEventListener('DOMContentLoaded', initLock);
